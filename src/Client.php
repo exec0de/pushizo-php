@@ -47,6 +47,7 @@ final class Client
     public readonly Resources\Segments $segments;
     public readonly Resources\Templates $templates;
     public readonly Resources\Campaigns $campaigns;
+    public readonly Resources\Journeys $journeys;
     public readonly Resources\InAppMessages $inAppMessages;
     public readonly Resources\Inbox $inbox;
     public readonly Resources\Analytics $analytics;
@@ -88,6 +89,7 @@ final class Client
         $this->segments = new Resources\Segments($this);
         $this->templates = new Resources\Templates($this);
         $this->campaigns = new Resources\Campaigns($this);
+        $this->journeys = new Resources\Journeys($this);
         $this->inAppMessages = new Resources\InAppMessages($this);
         $this->inbox = new Resources\Inbox($this);
         $this->analytics = new Resources\Analytics($this);

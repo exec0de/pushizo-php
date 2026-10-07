@@ -44,6 +44,7 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 | `segments` | `list`, `create`, `preview`, `get`, `update`, `delete`, `usedBy`, `estimate` |
 | `templates` | `list`, `create`, `get`, `update`, `delete`, `copyToApp`, `versions`, `render` |
 | `campaigns` | `list`, `create`, `get`, `update`, `delete`, `schedule`, `send`, `pause`, `resume`, `cancel`, `duplicate`, `approve`, `stats`, `deliveries`, `resendFailed`, `messages` |
+| `journeys` | `list`, `create`, `get`, `update`, `delete`, `saveDraft`, `updateNode`, `versions`, `publish`, `pause`, `resume`, `archive`, `duplicate`, `stats`, `listRuns`, `triggerRun`, `getRun`, `exitRun`, `listForUser` |
 | `inAppMessages` | `list`, `create`, `get`, `update`, `delete`, `setStatus` |
 | `analytics` | `overview`, `messages`, `subscriptions`, `events`, `conversions`, `funnel`, `providers`, `engagement` |
 | `exports` | `create`, `list`, `get` |
@@ -93,6 +94,42 @@ $hs->subscriptions->updateByToken('email', 'ayse@example.com', ['status' => 'uns
 
 // API anahtarı: düz anahtar yalnızca bu yanıtta döner, loglamayın
 $created = $hs->apiKeys->create(['name' => 'ci', 'scopes' => ['notifications:write']]);
+```
+
+## Journey'ler
+
+Journey'ler taslak graf üzerinde düzenlenir, `publish` ile yeni sürüm olarak yayınlanır; çalışan
+kullanıcılar girdikleri sürümde kalır. Graf React Flow biçimindedir (`nodes`, `edges`; düğüm
+türleri ve ayarlar için `docs/journeys.md`).
+
+```php
+$journey = $hs->journeys->create(['name' => 'Sipariş sonrası']);
+$hs->journeys->saveDraft($journey['id'], [
+    'graph' => [
+        'nodes' => [
+            ['id' => 'trg', 'type' => 'trigger', 'position' => ['x' => 0, 'y' => 0], 'data' => ['trigger' => ['kind' => 'api']]],
+            ['id' => 'push', 'type' => 'send_push', 'position' => ['x' => 0, 'y' => 120],
+             'data' => ['content' => ['contents' => ['tr' => 'Siparişin yolda', 'en' => 'Your order has shipped']]]],
+            ['id' => 'end', 'type' => 'exit', 'position' => ['x' => 0, 'y' => 240], 'data' => ['label' => 'Bitiş']],
+        ],
+        'edges' => [
+            ['id' => 'e1', 'source' => 'trg', 'target' => 'push', 'sourceHandle' => 'next'],
+            ['id' => 'e2', 'source' => 'push', 'target' => 'end', 'sourceHandle' => 'next'],
+        ],
+    ],
+    'settings' => ['re_entry' => ['mode' => 'after_exit']],
+]);
+$published = $hs->journeys->publish($journey['id']); // ['journey', 'version', 'issues']
+
+// API tetikleyicisi: kullanıcı external_id, user_id veya alias ile seçilir
+$result = $hs->journeys->triggerRun($journey['id'], ['external_id' => 'u-1', 'context' => ['order_id' => 'o-42']]);
+if ($result['entered'] && $result['run'] !== null) {
+    $run = $hs->journeys->getRun($journey['id'], $result['run']['id']);
+}
+$stats = $hs->journeys->stats($journey['id'], ['version' => $published['version']]);
+foreach ($hs->paginate(fn (?string $c) => $hs->journeys->listRuns($journey['id'], ['status' => 'waiting', 'cursor' => $c])) as $r) {
+    echo $r['id'], ' ', $r['current_node_id'], PHP_EOL;
+}
 ```
 
 ## Geliştirme

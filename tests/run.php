@@ -316,9 +316,29 @@ $table = [
     'PATCH /v1/apps/{appId}/in-app-messages/{messageId}' => fn (Client $c) => $c->inAppMessages->update('iam_1', ['name' => 'Yeni']),
     'DELETE /v1/apps/{appId}/in-app-messages/{messageId}' => fn (Client $c) => $c->inAppMessages->delete('iam_1'),
     'POST /v1/apps/{appId}/in-app-messages/{messageId}/status' => fn (Client $c) => $c->inAppMessages->setStatus('iam_1', 'active'),
+    // journey'ler
+    'GET /v1/apps/{appId}/journeys' => fn (Client $c) => $c->journeys->list(),
+    'POST /v1/apps/{appId}/journeys' => fn (Client $c) => $c->journeys->create(['name' => 'Karşılama']),
+    'GET /v1/apps/{appId}/journeys/{journeyId}' => fn (Client $c) => $c->journeys->get('jrn_1'),
+    'PATCH /v1/apps/{appId}/journeys/{journeyId}' => fn (Client $c) => $c->journeys->update('jrn_1', ['name' => 'Yeni ad']),
+    'DELETE /v1/apps/{appId}/journeys/{journeyId}' => fn (Client $c) => $c->journeys->delete('jrn_1'),
+    'PUT /v1/apps/{appId}/journeys/{journeyId}/draft' => fn (Client $c) => $c->journeys->saveDraft('jrn_1', ['graph' => ['nodes' => [], 'edges' => []]]),
+    'PATCH /v1/apps/{appId}/journeys/{journeyId}/nodes/{nodeId}' => fn (Client $c) => $c->journeys->updateNode('jrn_1', 'n1', ['position' => ['x' => 0, 'y' => 0]]),
+    'GET /v1/apps/{appId}/journeys/{journeyId}/versions' => fn (Client $c) => $c->journeys->versions('jrn_1'),
+    'POST /v1/apps/{appId}/journeys/{journeyId}/publish' => fn (Client $c) => $c->journeys->publish('jrn_1'),
+    'POST /v1/apps/{appId}/journeys/{journeyId}/pause' => fn (Client $c) => $c->journeys->pause('jrn_1'),
+    'POST /v1/apps/{appId}/journeys/{journeyId}/resume' => fn (Client $c) => $c->journeys->resume('jrn_1'),
+    'POST /v1/apps/{appId}/journeys/{journeyId}/archive' => fn (Client $c) => $c->journeys->archive('jrn_1'),
+    'POST /v1/apps/{appId}/journeys/{journeyId}/duplicate' => fn (Client $c) => $c->journeys->duplicate('jrn_1'),
+    'GET /v1/apps/{appId}/journeys/{journeyId}/stats' => fn (Client $c) => $c->journeys->stats('jrn_1'),
+    'GET /v1/apps/{appId}/journeys/{journeyId}/runs' => fn (Client $c) => $c->journeys->listRuns('jrn_1'),
+    'POST /v1/apps/{appId}/journeys/{journeyId}/runs' => fn (Client $c) => $c->journeys->triggerRun('jrn_1', ['external_id' => 'u1']),
+    'GET /v1/apps/{appId}/journeys/{journeyId}/runs/{runId}' => fn (Client $c) => $c->journeys->getRun('jrn_1', 'run_1'),
+    'DELETE /v1/apps/{appId}/journeys/{journeyId}/runs/{runId}' => fn (Client $c) => $c->journeys->exitRun('jrn_1', 'run_1'),
+    'GET /v1/apps/{appId}/users/by/{label}/{value}/journeys' => fn (Client $c) => $c->journeys->listForUser('external_id', 'u1'),
 ];
 
-$assert(count($specOps) >= 112, 'spec en az 112 public işlem içerir (' . count($specOps) . ')');
+$assert(count($specOps) >= 131, 'spec en az 131 public işlem içerir (' . count($specOps) . ')');
 $missing = array_values(array_diff($specOps, array_keys($table)));
 $assert($missing === [], 'her spec işlemi tabloda' . ($missing === [] ? '' : ': eksik ' . implode(', ', $missing)));
 $stale = array_values(array_diff(array_keys($table), $specOps));
@@ -369,6 +389,33 @@ $hs->analytics->messages(['from' => '2026-10-01T00:00:00Z', 'compare' => true, '
 $assert($t->calls[13]['url'] === 'https://api.test/v1/apps/app_1/analytics/messages?from=2026-10-01T00%3A00%3A00Z&compare=true&group_by=channel', 'analytics.messages sorgusu');
 $hs->organization->auditLogs(['app_id' => 'app_1', 'action' => 'api_key.rotate']);
 $assert($t->calls[14]['url'] === 'https://api.test/v1/organization/audit-logs?app_id=app_1&action=api_key.rotate', 'organization.auditLogs filtreleri');
+
+echo "Journey'ler: istek şekilleri" . PHP_EOL;
+$t = new FakeTransport(array_fill(0, 12, ['status' => 200, 'body' => '{"id":"jrn_1"}']));
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
+$graph = [
+    'nodes' => [
+        ['id' => 'n1', 'type' => 'trigger', 'position' => ['x' => 0, 'y' => 0], 'data' => ['trigger' => ['kind' => 'api']]],
+        ['id' => 'n2', 'type' => 'exit', 'position' => ['x' => 0, 'y' => 120], 'data' => ['label' => 'Bitiş']],
+    ],
+    'edges' => [['id' => 'e1', 'source' => 'n1', 'target' => 'n2', 'sourceHandle' => 'next']],
+];
+$hs->journeys->saveDraft('jrn/1', ['graph' => $graph], 'app_9');
+$assert($t->calls[0]['method'] === 'PUT' && $t->calls[0]['url'] === 'https://api.test/v1/apps/app_9/journeys/jrn%2F1/draft' && json_decode((string) $t->calls[0]['body'], true) === ['graph' => $graph], 'journeys.saveDraft PUT gövdesi ve app_id');
+$hs->journeys->updateNode('jrn_1', 'n/2', ['data' => ['label' => 'Son']]);
+$assert($t->calls[1]['method'] === 'PATCH' && $t->calls[1]['url'] === 'https://api.test/v1/apps/app_1/journeys/jrn_1/nodes/n%2F2', 'journeys.updateNode düğüm kimliği kodlanır');
+$hs->journeys->publish('jrn_1');
+$assert($t->calls[2]['method'] === 'POST' && $t->calls[2]['url'] === 'https://api.test/v1/apps/app_1/journeys/jrn_1/publish' && $t->calls[2]['body'] === null, 'journeys.publish gövdesiz POST');
+$hs->journeys->triggerRun('jrn_1', ['alias' => ['label' => 'crm', 'value' => 'c1'], 'context' => ['order_id' => 'o1']]);
+$assert($t->calls[3]['body'] === '{"alias":{"label":"crm","value":"c1"},"context":{"order_id":"o1"}}', 'journeys.triggerRun alias + context gövdesi');
+$hs->journeys->listRuns('jrn_1', ['status' => 'waiting', 'version' => 2, 'limit' => 10]);
+$assert($t->calls[4]['url'] === 'https://api.test/v1/apps/app_1/journeys/jrn_1/runs?status=waiting&version=2&limit=10', 'journeys.listRuns filtreleri');
+$hs->journeys->stats('jrn_1', ['version' => 3]);
+$assert($t->calls[5]['url'] === 'https://api.test/v1/apps/app_1/journeys/jrn_1/stats?version=3', 'journeys.stats sürüm sorgusu');
+$hs->journeys->exitRun('jrn_1', 'run_1');
+$assert($t->calls[6]['method'] === 'DELETE' && $t->calls[6]['url'] === 'https://api.test/v1/apps/app_1/journeys/jrn_1/runs/run_1', 'journeys.exitRun DELETE');
+$hs->journeys->listForUser('external_id', 'u 1');
+$assert($t->calls[7]['url'] === 'https://api.test/v1/apps/app_1/users/by/external_id/u%201/journeys', 'journeys.listForUser alias yolu');
 
 $t = new FakeTransport([['status' => 200, 'body' => "date,sent\n2026-10-01,5\n", 'headers' => ['content-type' => 'text/csv; charset=utf-8']]]);
 $hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
