@@ -19,7 +19,7 @@ final class Users
     }
 
     /**
-     * @param array{limit?:int, cursor?:string, q?:string, tag?:string} $params
+     * @param array{limit?:int, cursor?:string, sort?:string, q?:string, tag?:string, last_active_after?:string, last_active_before?:string} $params
      * @return array<string, mixed>
      */
     public function list(array $params = [], ?string $appId = null): array
@@ -29,13 +29,26 @@ final class Users
 
     /**
      * Oluştur/güncelle: `identity.external_id` veya `external_id`, tags, properties, subscriptions.
+     * `Idempotency-Key` başlığı verilmezse (ve `auto_idempotency_key` açıksa) UUID üretilir.
      *
      * @param array<string, mixed> $body
      * @return array<string, mixed>
      */
-    public function upsert(array $body, ?string $appId = null): array
+    public function upsert(array $body, ?string $appId = null, ?string $idempotencyKey = null): array
     {
-        return $this->client->request('POST', $this->base($appId), [], $body);
+        $key = $idempotencyKey ?? ($this->client->autoIdempotencyKey() ? Client::uuid() : null);
+        return $this->client->request('POST', $this->base($appId), [], $body, $key !== null ? ['idempotency_key' => $key] : []);
+    }
+
+    /**
+     * Segment tanımı (filtre AST'si: all/any/none ve { field, op, value }) ile kullanıcı arama.
+     *
+     * @param array{definition:array<string, mixed>, limit?:int, cursor?:string} $body
+     * @return array<string, mixed>
+     */
+    public function search(array $body, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->base($appId) . '/search', [], $body);
     }
 
     /** @return array<string, mixed> */
@@ -63,6 +76,26 @@ final class Users
     public function delete(string $label, string $value, ?string $appId = null): array
     {
         return $this->client->request('DELETE', $this->base($appId) . '/by/' . rawurlencode($label) . '/' . rawurlencode($value));
+    }
+
+    /**
+     * Kullanıcının tüm kimlikleri (hs_id, external_id, özel alias'lar).
+     *
+     * @return array<string, mixed>
+     */
+    public function getIdentity(string $label, string $value, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->base($appId) . '/by/' . rawurlencode($label) . '/' . rawurlencode($value) . '/identity');
+    }
+
+    /**
+     * KVKK/GDPR veri taşınabilirliği: profil, alias, abonelik ve son olaylar.
+     *
+     * @return array<string, mixed>
+     */
+    public function export(string $label, string $value, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->base($appId) . '/by/' . rawurlencode($label) . '/' . rawurlencode($value) . '/export');
     }
 
     /**

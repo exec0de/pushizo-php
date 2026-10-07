@@ -39,6 +39,29 @@ final class Subscriptions
         return $this->client->request('DELETE', $this->base($appId, $subscriptionId));
     }
 
+    /**
+     * Aboneliğin sahibi kullanıcının kimlikleri.
+     *
+     * @return array<string, mixed>
+     */
+    public function getUserIdentity(string $subscriptionId, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->base($appId, $subscriptionId) . '/user/identity');
+    }
+
+    /**
+     * Token ile güncelleme. `$tokenType`: ios_push, android_push, web_push, email, sms veya OneSignal
+     * adları (iOSPush, AndroidPush, ChromePush, FirefoxPush, SafariPush, Email, SMS).
+     *
+     * @param array{token?:string, device?:array<string,mixed>, status?:string, test_device?:bool} $body
+     * @return array<string, mixed>
+     */
+    public function updateByToken(string $tokenType, string $token, array $body, ?string $appId = null): array
+    {
+        $path = '/v1/apps/' . rawurlencode($this->client->appId($appId)) . '/subscriptions_by_token/' . rawurlencode($tokenType) . '/' . rawurlencode($token);
+        return $this->client->request('PATCH', $path, [], $body);
+    }
+
     /** @return array<string, mixed> */
     public function setOwner(string $subscriptionId, string $externalId, ?string $appId = null): array
     {

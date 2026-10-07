@@ -1,6 +1,6 @@
 {
   "name": "herosignal/herosignal-php",
-  "description": "HeroSignal PHP sunucu SDK'sı: bildirim gönderme, kullanıcı/abonelik yönetimi, olaylar, kanallar",
+  "description": "HeroSignal PHP sunucu SDK'sı: public API'nin tamamı (bildirim, kullanıcı, segment, şablon, kampanya, analitik, veri aktarımı, webhook…)",
   "type": "library",
   "license": "MIT",
   "require": {

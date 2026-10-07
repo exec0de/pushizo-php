@@ -13,7 +13,11 @@ final class Apps
     {
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Geriye dönük uyumluluk kısayolu; `$client->organization->get()` ile aynıdır.
+     *
+     * @return array<string, mixed>
+     */
     public function organization(): array
     {
         return $this->client->request('GET', '/v1/organization');
@@ -23,6 +27,17 @@ final class Apps
     public function list(): array
     {
         return $this->client->request('GET', '/v1/apps');
+    }
+
+    /**
+     * App oluştur (org geneli admin anahtarı).
+     *
+     * @param array{name:string, slug?:string, platform_flags?:array<string,bool>, default_language?:string, timezone?:string} $body
+     * @return array<string, mixed>
+     */
+    public function create(array $body): array
+    {
+        return $this->client->request('POST', '/v1/apps', [], $body);
     }
 
     /** @return array<string, mixed> */

@@ -27,7 +27,7 @@ final class Notifications
         $body = $input;
         $body['app_id'] = $this->client->appId($appId ?? ($input['app_id'] ?? null));
         if (!isset($body['idempotency_key']) && $this->client->autoIdempotencyKey()) {
-            $body['idempotency_key'] = self::uuid();
+            $body['idempotency_key'] = Client::uuid();
         }
         /** @var array{id:string, status:string, recipients_estimate:int, external_id_missing:array<int,string>} $result */
         $result = $this->client->request('POST', '/v1/notifications', [], $body);
@@ -41,12 +41,25 @@ final class Notifications
     }
 
     /**
-     * @param array{limit?:int, cursor?:string, source?:string, status?:string} $params
+     * @param array{limit?:int, cursor?:string, source?:string, kind?:string, status?:string, sort?:string} $params
      * @return array<string, mixed>
      */
     public function list(array $params = [], ?string $appId = null): array
     {
         return $this->client->request('GET', '/v1/notifications', ['app_id' => $this->client->appId($appId)] + $params);
+    }
+
+    /**
+     * Kaydedilmemiş hedef için alıcı sayısı (gönderim yapmaz).
+     *
+     * @param array{target:array<string, mixed>, include_unsubscribed?:bool} $input
+     * @return array<string, mixed>
+     */
+    public function estimate(array $input, ?string $appId = null): array
+    {
+        $body = $input;
+        $body['app_id'] = $this->client->appId($appId ?? ($input['app_id'] ?? null));
+        return $this->client->request('POST', '/v1/notifications/estimate', [], $body);
     }
 
     /** @return array<string, mixed> */
@@ -64,11 +77,23 @@ final class Notifications
         return $this->client->request('GET', '/v1/notifications/' . rawurlencode($messageId) . '/deliveries', ['app_id' => $this->client->appId($appId)] + $params);
     }
 
-    private static function uuid(): string
+    /**
+     * Bildirim geçmişi (teslimatlar) CSV dışa aktarma işi; `status === 'completed'` olunca `download_url` dolar.
+     *
+     * @return array<string, mixed>
+     */
+    public function history(string $messageId, ?string $appId = null): array
     {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+        return $this->client->request('GET', '/v1/notifications/' . rawurlencode($messageId) . '/history', ['app_id' => $this->client->appId($appId)]);
+    }
+
+    /**
+     * Mesaj olayları (gönderildi/teslim/açıldı/tıklandı/bounce…) CSV dışa aktarma işi (202).
+     *
+     * @return array<string, mixed>
+     */
+    public function exportEvents(string $messageId, ?string $appId = null): array
+    {
+        return $this->client->request('POST', '/v1/notifications/' . rawurlencode($messageId) . '/export_events', ['app_id' => $this->client->appId($appId)]);
     }
 }
