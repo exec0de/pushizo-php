@@ -1,0 +1,20 @@
+{
+  "name": "herosignal/herosignal-php",
+  "description": "HeroSignal PHP sunucu SDK'sı: bildirim gönderme, kullanıcı/abonelik yönetimi, olaylar, kanallar",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.1",
+    "ext-curl": "*",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "HeroSignal\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/run.php",
+    "lint": "for f in src/*.php src/**/*.php tests/*.php; do php -l $f; done"
+  }
+}
