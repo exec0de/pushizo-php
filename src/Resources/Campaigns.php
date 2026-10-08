@@ -161,4 +161,24 @@ final class Campaigns
     {
         return $this->client->request('GET', $this->one($campaignId, $appId) . '/messages');
     }
+
+    /**
+     * A/B testi: varyant bazlı gönderim/açılma/tıklama/dönüşüm, kontrol grubu ve anlamlılık.
+     *
+     * @return array<string, mixed>
+     */
+    public function variantStats(string $campaignId, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->one($campaignId, $appId) . '/variants/stats');
+    }
+
+    /**
+     * A/B testinde kazananı elle seçer; kalan kitleye kazanan varyant gönderilir.
+     *
+     * @return array<string, mixed>
+     */
+    public function selectWinner(string $campaignId, string $variantId, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->one($campaignId, $appId) . '/winner', [], ['variant_id' => $variantId]);
+    }
 }

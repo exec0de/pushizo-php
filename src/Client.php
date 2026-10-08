@@ -49,6 +49,7 @@ final class Client
     public readonly Resources\Campaigns $campaigns;
     public readonly Resources\Journeys $journeys;
     public readonly Resources\InAppMessages $inAppMessages;
+    public readonly Resources\Preferences $preferences;
     public readonly Resources\Inbox $inbox;
     public readonly Resources\Analytics $analytics;
     public readonly Resources\Exports $exports;
@@ -91,6 +92,7 @@ final class Client
         $this->campaigns = new Resources\Campaigns($this);
         $this->journeys = new Resources\Journeys($this);
         $this->inAppMessages = new Resources\InAppMessages($this);
+        $this->preferences = new Resources\Preferences($this);
         $this->inbox = new Resources\Inbox($this);
         $this->analytics = new Resources\Analytics($this);
         $this->exports = new Resources\Exports($this);

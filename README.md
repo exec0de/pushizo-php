@@ -42,11 +42,12 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 | `inbox` | `list`, `readAll`, `read`, `archive` |
 | `events` | `send`, `listDefinitions`, `getDefinition`, `updateDefinition` |
 | `segments` | `list`, `create`, `preview`, `get`, `update`, `delete`, `usedBy`, `estimate` |
-| `templates` | `list`, `create`, `get`, `update`, `delete`, `copyToApp`, `versions`, `render` |
-| `campaigns` | `list`, `create`, `get`, `update`, `delete`, `schedule`, `send`, `pause`, `resume`, `cancel`, `duplicate`, `approve`, `stats`, `deliveries`, `resendFailed`, `messages` |
+| `templates` | `list`, `create`, `get`, `update`, `delete`, `copyToApp`, `versions`, `render`, `stats` |
+| `campaigns` | `list`, `create`, `get`, `update`, `delete`, `schedule`, `send`, `pause`, `resume`, `cancel`, `duplicate`, `approve`, `stats`, `deliveries`, `resendFailed`, `messages`, `variantStats`, `selectWinner` |
 | `journeys` | `list`, `create`, `get`, `update`, `delete`, `saveDraft`, `updateNode`, `versions`, `publish`, `pause`, `resume`, `archive`, `duplicate`, `stats`, `listRuns`, `triggerRun`, `getRun`, `exitRun`, `listForUser` |
 | `inAppMessages` | `list`, `create`, `get`, `update`, `delete`, `setStatus` |
-| `analytics` | `overview`, `messages`, `subscriptions`, `events`, `conversions`, `funnel`, `providers`, `engagement` |
+| `preferences` | `listCategories`, `createCategory`, `updateCategory`, `deleteCategory`, `getUser`, `setUser` |
+| `analytics` | `overview`, `messages`, `subscriptions`, `events`, `conversions`, `funnel`, `providers`, `engagement`, `retention` |
 | `exports` | `create`, `list`, `get` |
 | `imports` | `create` (CSV metni, multipart), `createFromFile`, `list`, `get` |
 | `channels` | `list`, `upsert`, `validate` |
@@ -94,6 +95,28 @@ $hs->subscriptions->updateByToken('email', 'ayse@example.com', ['status' => 'uns
 
 // API anahtarı: düz anahtar yalnızca bu yanıtta döner, loglamayın
 $created = $hs->apiKeys->create(['name' => 'ci', 'scopes' => ['notifications:write']]);
+```
+
+## A/B testi ve tercihler
+
+```php
+$cmp = $hs->campaigns->create([
+    'name' => 'Bahar',
+    'variants' => [
+        ['name' => 'A', 'weight_percent' => 45, 'content' => ['contents' => ['tr' => 'Bahar indirimi']]],
+        ['name' => 'B', 'weight_percent' => 45, 'content' => ['contents' => ['tr' => '%20 indirim']]],
+        ['name' => 'Kontrol', 'weight_percent' => 10, 'is_control' => true],
+    ],
+    'ab_test' => ['enabled' => true, 'test_percentage' => 30, 'winner' => ['mode' => 'auto', 'metric' => 'click_rate', 'evaluate_after_minutes' => 120]],
+]);
+$stats = $hs->campaigns->variantStats($cmp['id']); // varyant bazlı oranlar + anlamlılık
+$hs->campaigns->selectWinner($cmp['id'], $stats['variants'][0]['variant_id']); // elle seçim
+
+// Kategoriler ve kullanıcı tercihleri (kategoriye kapalı kullanıcıya o kategori gönderilmez)
+$hs->preferences->createCategory(['key' => 'marketing', 'name' => ['tr' => 'Pazarlama', 'en' => 'Marketing']]);
+$hs->preferences->setUser('external_id', 'u-1', [['category' => 'marketing', 'channel' => 'email', 'opted_in' => false]]);
+$hs->templates->stats('tpl_1');
+$hs->analytics->retention(['weeks' => 8]);
 ```
 
 ## Journey'ler

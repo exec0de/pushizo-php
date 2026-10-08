@@ -107,6 +107,17 @@ final class Analytics
     }
 
     /**
+     * Retention kohortu: ilk görülme haftası × sonraki haftalarda aktiflik oranı.
+     *
+     * @param array{weeks?:int, format?:'json'|'csv'} $params
+     * @return array<string, mixed>|string
+     */
+    public function retention(array $params = [], ?string $appId = null): array|string
+    {
+        return $this->report('retention', $params, $appId);
+    }
+
+    /**
      * Sıralı adımlı huni raporu.
      *
      * @param array{steps:array<int, array{name:string, where?:array{key:string, value:string}}>, from?:string, to?:string, window_hours?:int, compare?:bool, format?:'json'|'csv'} $body

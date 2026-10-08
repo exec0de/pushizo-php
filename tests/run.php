@@ -269,6 +269,7 @@ $table = [
     'POST /v1/apps/{appId}/analytics/funnels' => fn (Client $c) => $c->analytics->funnel(['steps' => [['name' => 'a'], ['name' => 'b']]]),
     'GET /v1/apps/{appId}/analytics/providers' => fn (Client $c) => $c->analytics->providers(),
     'GET /v1/apps/{appId}/analytics/engagement' => fn (Client $c) => $c->analytics->engagement(),
+    'GET /v1/apps/{appId}/analytics/retention' => fn (Client $c) => $c->analytics->retention(['weeks' => 8]),
     'POST /v1/apps/{appId}/exports' => fn (Client $c) => $c->exports->create(['type' => 'users']),
     'GET /v1/apps/{appId}/exports' => fn (Client $c) => $c->exports->list(),
     'GET /v1/apps/{appId}/exports/{exportId}' => fn (Client $c) => $c->exports->get('exp_1'),
@@ -290,6 +291,7 @@ $table = [
     'DELETE /v1/apps/{appId}/templates/{templateId}' => fn (Client $c) => $c->templates->delete('tpl_1'),
     'POST /v1/apps/{appId}/templates/{templateId}/copy_to_app' => fn (Client $c) => $c->templates->copyToApp('tpl_1', ['target_app_id' => 'app_2']),
     'GET /v1/apps/{appId}/templates/{templateId}/versions' => fn (Client $c) => $c->templates->versions('tpl_1'),
+    'GET /v1/apps/{appId}/templates/{templateId}/stats' => fn (Client $c) => $c->templates->stats('tpl_1'),
     'POST /v1/apps/{appId}/templates/{templateId}/render' => fn (Client $c) => $c->templates->render('tpl_1'),
     'GET /v1/apps/{appId}/campaigns' => fn (Client $c) => $c->campaigns->list(),
     'POST /v1/apps/{appId}/campaigns' => fn (Client $c) => $c->campaigns->create(['name' => 'Bahar']),
@@ -307,6 +309,14 @@ $table = [
     'GET /v1/apps/{appId}/campaigns/{campaignId}/deliveries' => fn (Client $c) => $c->campaigns->deliveries('cmp_1'),
     'POST /v1/apps/{appId}/campaigns/{campaignId}/resend-failed' => fn (Client $c) => $c->campaigns->resendFailed('cmp_1'),
     'GET /v1/apps/{appId}/campaigns/{campaignId}/messages' => fn (Client $c) => $c->campaigns->messages('cmp_1'),
+    'GET /v1/apps/{appId}/campaigns/{campaignId}/variants/stats' => fn (Client $c) => $c->campaigns->variantStats('cmp_1'),
+    'POST /v1/apps/{appId}/campaigns/{campaignId}/winner' => fn (Client $c) => $c->campaigns->selectWinner('cmp_1', 'cvr_1'),
+    'GET /v1/apps/{appId}/categories' => fn (Client $c) => $c->preferences->listCategories(),
+    'POST /v1/apps/{appId}/categories' => fn (Client $c) => $c->preferences->createCategory(['key' => 'marketing', 'name' => ['tr' => 'Pazarlama']]),
+    'PATCH /v1/apps/{appId}/categories/{categoryId}' => fn (Client $c) => $c->preferences->updateCategory('cat_1', ['position' => 1]),
+    'DELETE /v1/apps/{appId}/categories/{categoryId}' => fn (Client $c) => $c->preferences->deleteCategory('cat_1'),
+    'GET /v1/apps/{appId}/users/by/{label}/{value}/preferences' => fn (Client $c) => $c->preferences->getUser('external_id', 'u1'),
+    'PUT /v1/apps/{appId}/users/by/{label}/{value}/preferences' => fn (Client $c) => $c->preferences->setUser('external_id', 'u1', [['category' => 'marketing', 'opted_in' => false]]),
     'GET /v1/apps/{appId}/suppressions' => fn (Client $c) => $c->suppressions->list(),
     'POST /v1/apps/{appId}/suppressions' => fn (Client $c) => $c->suppressions->create(['channel' => 'email', 'value' => 'a@example.com']),
     'DELETE /v1/apps/{appId}/suppressions/{suppressionId}' => fn (Client $c) => $c->suppressions->delete('sup_1'),
@@ -338,7 +348,7 @@ $table = [
     'GET /v1/apps/{appId}/users/by/{label}/{value}/journeys' => fn (Client $c) => $c->journeys->listForUser('external_id', 'u1'),
 ];
 
-$assert(count($specOps) >= 131, 'spec en az 131 public işlem içerir (' . count($specOps) . ')');
+$assert(count($specOps) >= 141, 'spec en az 141 public işlem içerir (' . count($specOps) . ')');
 $missing = array_values(array_diff($specOps, array_keys($table)));
 $assert($missing === [], 'her spec işlemi tabloda' . ($missing === [] ? '' : ': eksik ' . implode(', ', $missing)));
 $stale = array_values(array_diff(array_keys($table), $specOps));

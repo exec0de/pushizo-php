@@ -75,6 +75,16 @@ final class Templates
         return $this->client->request('POST', $this->one($templateId, $appId) . '/copy_to_app', [], $body);
     }
 
+    /**
+     * Şablonu kullanan mesajların toplu istatistiği (gönderim, açılma, tıklama, son kullanım).
+     *
+     * @return array<string, mixed>
+     */
+    public function stats(string $templateId, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->one($templateId, $appId) . '/stats');
+    }
+
     /** @return array<string, mixed> */
     public function versions(string $templateId, ?string $appId = null): array
     {
