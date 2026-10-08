@@ -41,6 +41,10 @@ final class Client
     public readonly Resources\Channels $channels;
     public readonly Resources\Apps $apps;
     public readonly Resources\Suppressions $suppressions;
+    public readonly Resources\Templates $templates;
+    public readonly Resources\InAppMessages $inAppMessages;
+    public readonly Resources\ApiKeys $apiKeys;
+    public readonly Resources\Webhooks $webhooks;
 
     /**
      * @param array{
@@ -71,6 +75,10 @@ final class Client
         $this->channels = new Resources\Channels($this);
         $this->apps = new Resources\Apps($this);
         $this->suppressions = new Resources\Suppressions($this);
+        $this->templates = new Resources\Templates($this);
+        $this->inAppMessages = new Resources\InAppMessages($this);
+        $this->apiKeys = new Resources\ApiKeys($this);
+        $this->webhooks = new Resources\Webhooks($this);
     }
 
     /** SDK identity verification: `identity_hash` = HMAC-SHA256(sdk_secret, external_id). */

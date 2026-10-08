@@ -88,4 +88,57 @@ final class Users
     {
         return $this->client->request('POST', $this->base($appId) . '/by/' . rawurlencode($label) . '/' . rawurlencode($value) . '/subscriptions', [], $subscription);
     }
+
+    /**
+     * Kullanıcının tüm kimlikleri: `hs_id`, varsa `external_id` ve özel alias'lar.
+     *
+     * @return array{identity: array<string, string>}
+     */
+    public function identity(string $label, string $value, ?string $appId = null): array
+    {
+        /** @var array{identity: array<string, string>} $result */
+        $result = $this->client->request('GET', $this->alias($label, $value, $appId) . '/identity');
+        return $result;
+    }
+
+    /**
+     * KVKK/GDPR veri taşınabilirliği: profil, alias, abonelikler ve son olaylar (audit kaydı oluşturur).
+     *
+     * @return array<string, mixed>
+     */
+    public function export(string $label, string $value, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->alias($label, $value, $appId) . '/export');
+    }
+
+    /**
+     * Bildirim kutusu öğeleri.
+     *
+     * @param array{limit?:int, cursor?:string, include_archived?:bool} $params
+     * @return array<string, mixed>
+     */
+    public function inbox(string $label, string $value, array $params = [], ?string $appId = null): array
+    {
+        if (isset($params['include_archived'])) {
+            $params['include_archived'] = $params['include_archived'] ? 'true' : 'false';
+        }
+        return $this->client->request('GET', $this->alias($label, $value, $appId) . '/inbox', $params);
+    }
+
+    /** @return array<string, mixed> */
+    public function inboxMarkRead(string $label, string $value, string $itemId, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->alias($label, $value, $appId) . '/inbox/' . rawurlencode($itemId) . '/read');
+    }
+
+    /** Öğeyi kutudan kaldırır (arşivler). @return array<string, mixed> */
+    public function inboxArchive(string $label, string $value, string $itemId, ?string $appId = null): array
+    {
+        return $this->client->request('DELETE', $this->alias($label, $value, $appId) . '/inbox/' . rawurlencode($itemId));
+    }
+
+    private function alias(string $label, string $value, ?string $appId): string
+    {
+        return $this->base($appId) . '/by/' . rawurlencode($label) . '/' . rawurlencode($value);
+    }
 }

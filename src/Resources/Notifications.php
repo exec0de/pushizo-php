@@ -64,6 +64,41 @@ final class Notifications
         return $this->client->request('GET', '/v1/notifications/' . rawurlencode($messageId) . '/deliveries', ['app_id' => $this->client->appId($appId)] + $params);
     }
 
+    /**
+     * Bildirim geçmişi (teslimatlar) CSV işi; geçerli iş varken tekrarlanan çağrı aynı işi döndürür,
+     * `status === 'completed'` olunca `download_url` dolar.
+     *
+     * @return array<string, mixed>
+     */
+    public function history(string $messageId, ?string $appId = null): array
+    {
+        return $this->client->request('GET', '/v1/notifications/' . rawurlencode($messageId) . '/history', ['app_id' => $this->client->appId($appId)]);
+    }
+
+    /**
+     * Kaydedilmemiş hedef için alıcı sayımı (gönderim yapmaz, abonelik oluşturmaz). `channels` verilmezse tüm kanallar;
+     * `unknown_contacts` henüz aboneliği olmayan `email_to` / `include_phone_numbers` adresleridir.
+     *
+     * @param array<string, mixed> $target
+     * @return array{recipients_estimate:int, by_channel:array<string,int>, unknown_contacts:int, external_id_missing:array<int,string>}
+     */
+    public function estimate(array $target, ?string $appId = null): array
+    {
+        /** @var array{recipients_estimate:int, by_channel:array<string,int>, unknown_contacts:int, external_id_missing:array<int,string>} $result */
+        $result = $this->client->request('POST', '/v1/notifications/estimate', [], ['app_id' => $this->client->appId($appId), 'target' => $target]);
+        return $result;
+    }
+
+    /**
+     * Mesaj olayları (teslim, açılma, tıklama, bounce…) CSV işi; tamamlanınca `download_url` dolar.
+     *
+     * @return array<string, mixed>
+     */
+    public function exportEvents(string $messageId, ?string $appId = null): array
+    {
+        return $this->client->request('POST', '/v1/notifications/' . rawurlencode($messageId) . '/export-events', ['app_id' => $this->client->appId($appId)]);
+    }
+
     private static function uuid(): string
     {
         $bytes = random_bytes(16);

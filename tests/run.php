@@ -177,5 +177,73 @@ $sent = json_decode((string) $t->calls[0]['body'], true);
 $assert($sent['email_subject'] === 'Siparişin yolda' && $sent['sms_from'] === 'MAGAZA' && $sent['add_to_inbox'] === true && $sent['inbox_ttl'] === 86400, 'alanlar gövdede');
 $assert($sent['target']['channels'] === ['email', 'sms'], 'kanal hedefi');
 
+echo "Faz 10B uçları (sayım, olay CSV, kimlik, dışa aktarım, inbox, token ile güncelleme)" . PHP_EOL;
+$t = new FakeTransport(array_fill(0, 10, ['status' => 200, 'body' => '{"identity":{"hs_id":"usr_1"}}']));
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
+$hs->notifications->estimate(['email_to' => ['a@example.com']]);
+$hs->notifications->exportEvents('msg_1');
+$hs->notifications->history('msg_1');
+$identity = $hs->users->identity('external_id', 'u 1');
+$hs->users->export('external_id', 'u1');
+$hs->users->inbox('external_id', 'u1', ['limit' => 5, 'include_archived' => true]);
+$hs->users->inboxMarkRead('external_id', 'u1', 'inb_1');
+$hs->users->inboxArchive('external_id', 'u1', 'inb_1');
+$hs->subscriptions->identity('sub_1');
+$hs->subscriptions->updateByToken('email', 'Ali@Example.com', ['status' => 'unsubscribed']);
+$urls = array_map(static fn ($c) => $c['method'] . ' ' . $c['url'], $t->calls);
+$assert($urls === [
+    'POST https://api.test/v1/notifications/estimate',
+    'POST https://api.test/v1/notifications/msg_1/export-events?app_id=app_1',
+    'GET https://api.test/v1/notifications/msg_1/history?app_id=app_1',
+    'GET https://api.test/v1/apps/app_1/users/by/external_id/u%201/identity',
+    'GET https://api.test/v1/apps/app_1/users/by/external_id/u1/export',
+    'GET https://api.test/v1/apps/app_1/users/by/external_id/u1/inbox?limit=5&include_archived=true',
+    'POST https://api.test/v1/apps/app_1/users/by/external_id/u1/inbox/inb_1/read',
+    'DELETE https://api.test/v1/apps/app_1/users/by/external_id/u1/inbox/inb_1',
+    'GET https://api.test/v1/apps/app_1/subscriptions/sub_1/user/identity',
+    'PATCH https://api.test/v1/apps/app_1/subscriptions/by-token/email/Ali%40Example.com',
+], 'yollar');
+$assert(json_decode((string) $t->calls[0]['body'], true) === ['app_id' => 'app_1', 'target' => ['email_to' => ['a@example.com']]], 'sayım gövdesi');
+$assert($identity['identity']['hs_id'] === 'usr_1', 'kimlik yanıtı');
+$assert(json_decode((string) $t->calls[9]['body'], true) === ['status' => 'unsubscribed'], 'token ile güncelleme gövdesi');
+
+echo "şablon, in-app, API anahtarı ve webhook kaynakları" . PHP_EOL;
+$t = new FakeTransport(array_fill(0, 14, ['status' => 200, 'body' => '{}']));
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
+$hs->templates->list(['q' => 'hoş']);
+$hs->templates->create(['name' => 'Hoş geldin', 'content' => ['contents' => ['en' => 'Hi']]]);
+$hs->templates->render('tpl_1');
+$hs->templates->copy('tpl_1', 'app_2');
+$hs->templates->delete('tpl_1');
+$hs->inAppMessages->list(['status' => 'active']);
+$hs->inAppMessages->setStatus('iam_1', 'paused');
+$hs->inAppMessages->delete('iam_1');
+$hs->apiKeys->create(['name' => 'CI', 'scopes' => ['notifications:write']]);
+$hs->apiKeys->update('key_1', ['ip_allowlist' => ['10.0.0.0/8']]);
+$hs->apiKeys->rotate('key_1');
+$hs->webhooks->create(['url' => 'https://x.example.com/h', 'events' => ['delivery.bounced']]);
+$hs->webhooks->deliveries('whk_1', ['status' => 'dead']);
+$hs->webhooks->replay('whd_1');
+$urls = array_map(static fn ($c) => $c['method'] . ' ' . $c['url'], $t->calls);
+$assert($urls === [
+    'GET https://api.test/v1/apps/app_1/templates?q=ho%C5%9F',
+    'POST https://api.test/v1/apps/app_1/templates',
+    'POST https://api.test/v1/apps/app_1/templates/tpl_1/render',
+    'POST https://api.test/v1/apps/app_1/templates/tpl_1/copy',
+    'DELETE https://api.test/v1/apps/app_1/templates/tpl_1',
+    'GET https://api.test/v1/apps/app_1/in-app-messages?status=active',
+    'POST https://api.test/v1/apps/app_1/in-app-messages/iam_1/status',
+    'DELETE https://api.test/v1/apps/app_1/in-app-messages/iam_1',
+    'POST https://api.test/v1/apps/app_1/api-keys',
+    'PATCH https://api.test/v1/apps/app_1/api-keys/key_1',
+    'POST https://api.test/v1/apps/app_1/api-keys/key_1/rotate',
+    'POST https://api.test/v1/apps/app_1/webhooks',
+    'GET https://api.test/v1/apps/app_1/webhooks/whk_1/deliveries?status=dead',
+    'POST https://api.test/v1/apps/app_1/webhooks/deliveries/whd_1/replay',
+], 'yollar');
+$assert($t->calls[2]['body'] === '{}', 'boş önizleme gövdesi nesne');
+$assert(json_decode((string) $t->calls[3]['body'], true) === ['target_app_id' => 'app_2'], 'kopyalama gövdesi');
+$assert(json_decode((string) $t->calls[6]['body'], true) === ['status' => 'paused'], 'durum gövdesi');
+
 echo PHP_EOL . ($failures === 0 ? 'Tüm testler geçti.' : "$failures test başarısız.") . PHP_EOL;
 exit($failures === 0 ? 0 : 1);

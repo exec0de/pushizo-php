@@ -44,4 +44,28 @@ final class Subscriptions
     {
         return $this->client->request('POST', $this->base($appId, $subscriptionId) . '/owner', [], ['external_id' => $externalId]);
     }
+
+    /**
+     * Aboneliğin sahibi kullanıcının kimlikleri (kullanıcısız abonelikte 404).
+     *
+     * @return array{identity: array<string, string>}
+     */
+    public function identity(string $subscriptionId, ?string $appId = null): array
+    {
+        /** @var array{identity: array<string, string>} $result */
+        $result = $this->client->request('GET', $this->base($appId, $subscriptionId) . '/user/identity');
+        return $result;
+    }
+
+    /**
+     * Aboneliği kanal + token ile güncelle. Kanal: ios_push, android_push, email, sms (token kanonik biçime getirilir).
+     *
+     * @param array{token?:string, device?:array<string,mixed>, status?:string, test_device?:bool} $body
+     * @return array<string, mixed>
+     */
+    public function updateByToken(string $channel, string $token, array $body, ?string $appId = null): array
+    {
+        $path = '/v1/apps/' . rawurlencode($this->client->appId($appId)) . '/subscriptions/by-token/' . rawurlencode($channel) . '/' . rawurlencode($token);
+        return $this->client->request('PATCH', $path, [], $body);
+    }
 }
