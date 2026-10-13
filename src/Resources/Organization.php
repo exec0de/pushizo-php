@@ -33,4 +33,15 @@ final class Organization
     {
         return $this->client->request('GET', '/v1/organization/audit-logs', $params);
     }
+
+    /**
+     * Organizasyon kullanımı ve plan kotaları (org geneli anahtar).
+     *
+     * @param array{days?:int} $params
+     * @return array<string, mixed>
+     */
+    public function usage(array $params = []): array
+    {
+        return $this->client->request('GET', '/v1/organization/usage', $params);
+    }
 }
