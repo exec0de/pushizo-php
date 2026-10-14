@@ -67,4 +67,14 @@ final class InAppMessages
     {
         return $this->client->request('POST', $this->base($appId) . '/' . rawurlencode($messageId) . '/status', [], ['status' => $status]);
     }
+
+    /**
+     * A/B kazananını elle seçer; SDK'lar bundan sonra herkese kazanan görünümü sunar.
+     *
+     * @return array<string, mixed>
+     */
+    public function selectWinner(string $messageId, string $variantId, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->base($appId) . '/' . rawurlencode($messageId) . '/winner', [], ['variant_id' => $variantId]);
+    }
 }

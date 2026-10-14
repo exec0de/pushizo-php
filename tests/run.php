@@ -327,6 +327,7 @@ $table = [
     'PATCH /v1/apps/{appId}/in-app-messages/{messageId}' => fn (Client $c) => $c->inAppMessages->update('iam_1', ['name' => 'Yeni']),
     'DELETE /v1/apps/{appId}/in-app-messages/{messageId}' => fn (Client $c) => $c->inAppMessages->delete('iam_1'),
     'POST /v1/apps/{appId}/in-app-messages/{messageId}/status' => fn (Client $c) => $c->inAppMessages->setStatus('iam_1', 'active'),
+    'POST /v1/apps/{appId}/in-app-messages/{messageId}/winner' => fn (Client $c) => $c->inAppMessages->selectWinner('iam_1', 'a'),
     // journey'ler
     'GET /v1/apps/{appId}/journeys' => fn (Client $c) => $c->journeys->list(),
     'POST /v1/apps/{appId}/journeys' => fn (Client $c) => $c->journeys->create(['name' => 'Karşılama']),
