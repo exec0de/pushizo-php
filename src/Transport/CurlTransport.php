@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace HeroSignal\Transport;
 
+use HeroSignal\ConnectionException;
 use HeroSignal\HeroSignalException;
 
 /** ext-curl ile HTTP istekleri (ek bağımlılık yok). */
 final class CurlTransport implements TransportInterface
 {
+    /** Bağlantı kurulmadan oluşan cURL hataları: proxy/sunucu adı çözümlenemedi, bağlantı kurulamadı. */
+    private const NOT_SENT_ERRORS = [CURLE_COULDNT_RESOLVE_PROXY, CURLE_COULDNT_RESOLVE_HOST, CURLE_COULDNT_CONNECT];
+
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): array
     {
         $ch = curl_init($url);
@@ -41,8 +45,13 @@ final class CurlTransport implements TransportInterface
         $result = curl_exec($ch);
         if ($result === false) {
             $error = curl_error($ch);
+            $errno = curl_errno($ch);
+            // Zaman aşımı bağlantı kurulmadan (connect_time 0) oluştuysa istek gönderilmemiştir.
+            $notSent = in_array($errno, self::NOT_SENT_ERRORS, true)
+                || ($errno === CURLE_OPERATION_TIMEDOUT && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) === 0.0);
             curl_close($ch);
-            throw new HeroSignalException(0, 'NETWORK', $error !== '' ? $error : 'ağ hatası');
+            $message = $error !== '' ? $error : 'ağ hatası';
+            throw $notSent ? new ConnectionException($message) : new HeroSignalException(0, 'NETWORK', $message);
         }
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_close($ch);

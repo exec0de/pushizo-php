@@ -23,6 +23,8 @@ final class Client
 {
     public const VERSION = '0.1.0';
     private const BACKOFF_MS = [300, 1000, 3000];
+    /** Sunucuda tekrarlanması ek yan etki doğurmayan HTTP metotları; 5xx ve ağ hatalarında serbestçe yeniden denenir. */
+    private const IDEMPOTENT_METHODS = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'];
 
     private readonly string $apiKey;
     private readonly string $baseUrl;
@@ -160,7 +162,9 @@ final class Client
     }
 
     /**
-     * JSON istek; 429/5xx ve ağ hatalarında üstel geri çekilme (Retry-After'a saygılı).
+     * JSON istek; üstel geri çekilmeyle yeniden dener (Retry-After'a saygılı). 429 her metotta; 5xx ve ağ hataları
+     * GET/HEAD/OPTIONS/PUT/DELETE'te, POST/PATCH'te yalnızca `Idempotency-Key` varsa veya istek sunucuya hiç
+     * gönderilmediyse (ConnectionException) yeniden denenir.
      *
      * @param array<string, scalar|null> $query
      * @param array{idempotency_key?:string, multipart?:array<string, string|array{filename:string, content:string, content_type?:string}>} $options
@@ -225,12 +229,15 @@ final class Client
             $payload = json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
+        // Gövdedeki idempotency_key, API tarafında Idempotency-Key başlığıyla eşdeğerdir.
+        $hasKey = isset($headers['Idempotency-Key'])
+            || (is_array($body) && isset($body['idempotency_key']) && is_string($body['idempotency_key']) && $body['idempotency_key'] !== '');
         $attempt = 0;
         while (true) {
             try {
                 $response = $this->transport->send($method, $url, $headers, $payload, $this->timeoutSeconds);
             } catch (HeroSignalException $e) {
-                if (!$e->isRetryable() || $attempt >= $this->maxRetries) {
+                if ($attempt >= $this->maxRetries || !self::shouldRetry($method, $e, $hasKey)) {
                     throw $e;
                 }
                 ($this->sleep)(self::BACKOFF_MS[min($attempt, count(self::BACKOFF_MS) - 1)]);
@@ -252,13 +259,31 @@ final class Client
                 isset($error['request_id']) ? (string) $error['request_id'] : ($response['headers']['x-request-id'] ?? null),
                 isset($error['details']) && is_array($error['details']) ? $error['details'] : null,
             );
-            if (!$exception->isRetryable() || $attempt >= $this->maxRetries) {
+            if ($attempt >= $this->maxRetries || !self::shouldRetry($method, $exception, $hasKey)) {
                 throw $exception;
             }
             $retryAfter = isset($response['headers']['retry-after']) ? (int) $response['headers']['retry-after'] : 0;
             ($this->sleep)($retryAfter > 0 ? $retryAfter * 1000 : self::BACKOFF_MS[min($attempt, count(self::BACKOFF_MS) - 1)]);
             $attempt++;
         }
+    }
+
+    /**
+     * Yeniden deneme politikası: 429 her metotta (istek işlenmeden reddedilmiştir). 5xx ve ağ hataları idempotent
+     * metotlarda; POST/PATCH'te yalnızca Idempotency-Key varsa ya da istek sunucuya hiç gönderilmediyse. Aksi hâlde
+     * sunucu isteği işlemiş olabilir ve tekrar çift kayıt üretebilir.
+     */
+    private static function shouldRetry(string $method, HeroSignalException $e, bool $hasIdempotencyKey): bool
+    {
+        if ($e->status === 429) {
+            return true;
+        }
+        if (!$e->isRetryable()) {
+            return false;
+        }
+        return in_array(strtoupper($method), self::IDEMPOTENT_METHODS, true)
+            || $hasIdempotencyKey
+            || $e instanceof ConnectionException;
     }
 
     /**

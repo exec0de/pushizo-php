@@ -11,7 +11,7 @@ $hs = new \HeroSignal\Client([
     'api_key' => getenv('HS_API_KEY'),   // hs_live_…
     'app_id' => getenv('HS_APP_ID'),     // çağrıda app verilmezse kullanılır
     'base_url' => 'https://api.herosignal.dev',
-    'max_retries' => 3,                  // 429/5xx ve ağ hatalarında üstel geri çekilme
+    'max_retries' => 3,                  // 429 her metotta; 5xx/ağ hatası GET/PUT/DELETE'te, POST/PATCH'te yalnızca Idempotency-Key varsa veya istek gönderilemediyse
     'timeout' => 30,
     'auto_idempotency_key' => true,      // notifications->create ve users->upsert için otomatik UUID
 ]);

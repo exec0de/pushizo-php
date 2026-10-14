@@ -107,31 +107,118 @@ try {
     $assert(str_contains($e->getMessage(), 'app_id'), 'app_id eksik hatası');
 }
 
+echo "yeniden deneme politikası" . PHP_EOL;
+$unavailable = ['status' => 503, 'body' => '{"error":{"code":"HS_SERVICE_UNAVAILABLE","message":"x"}}'];
+$ok = ['status' => 200, 'body' => '{"id":"ok"}'];
+$make = static function (array $responses, array $extra = []) use ($noSleep): array {
+    $t = new FakeTransport($responses);
+    return [new Client($extra + ['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]), $t];
+};
+
+[$hs, $t] = $make([$unavailable, $ok]);
+try {
+    $hs->events->send([['external_id' => 'u1', 'name' => 'purchase']]);
+    $assert(false, 'anahtarsız POST 503 istisna fırlatmalı');
+} catch (HeroSignalException $e) {
+    $assert($e->status === 503 && count($t->calls) === 1, 'anahtarsız POST 503 sonrası yeniden denenmez');
+}
+
+[$hs, $t] = $make([$unavailable, $ok], ['auto_idempotency_key' => false]);
+try {
+    $hs->notifications->create(['target' => ['all' => true], 'contents' => ['en' => 'x']]);
+    $assert(false, 'otomatik anahtar kapalı: 503 istisna fırlatmalı');
+} catch (HeroSignalException $e) {
+    $assert(count($t->calls) === 1, 'otomatik anahtar kapalıyken notifications.create tekrarlanmaz');
+}
+
+[$hs, $t] = $make([$unavailable, $ok]);
+$hs->request('POST', '/v1/apps/app_1/events', [], ['events' => []], ['idempotency_key' => 'evt-1']);
+$assert(count($t->calls) === 2 && $t->calls[1]['headers']['Idempotency-Key'] === 'evt-1', 'Idempotency-Key taşıyan POST 503 sonrası yeniden denenir');
+
+[$hs, $t] = $make([$unavailable, ['status' => 202, 'body' => '{"id":"msg_1"}']]);
+$hs->notifications->create(['target' => ['all' => true], 'contents' => ['en' => 'x']]);
+$keys = array_map(static fn (array $c): string => json_decode((string) $c['body'], true)['idempotency_key'], $t->calls);
+$assert(count($t->calls) === 2 && $keys[0] === $keys[1], 'otomatik idempotency anahtarlı notifications.create aynı anahtarla yeniden denenir');
+
+[$hs, $t] = $make([$unavailable, $ok, $unavailable, ['status' => 204, 'body' => '']]);
+$hs->notifications->get('msg_1');
+$hs->request('DELETE', '/v1/apps/app_1/webhooks/whk_1');
+$assert(array_column($t->calls, 'method') === ['GET', 'GET', 'DELETE', 'DELETE'], 'GET ve DELETE 503 sonrası yeniden denenir');
+
+$slept = [];
+$t = new FakeTransport([['status' => 429, 'body' => '{"error":{"code":"HS_RATE_LIMITED","message":"x"}}', 'headers' => ['retry-after' => '2']], $ok]);
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => static function (int $ms) use (&$slept): void { $slept[] = $ms; }]);
+$hs->events->send([]);
+$assert(count($t->calls) === 2 && $slept === [2000], '429 alan anahtarsız POST Retry-After sonrası yeniden denenir');
+
+$refusedOnce = new class implements TransportInterface {
+    public int $calls = 0;
+
+    public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): array
+    {
+        if ($this->calls++ === 0) {
+            throw new \HeroSignal\ConnectionException('Failed to connect: Connection refused');
+        }
+        return ['status' => 200, 'body' => '{"accepted":1}', 'headers' => []];
+    }
+};
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $refusedOnce, 'sleep' => $noSleep]);
+$assert($hs->events->send([]) === ['accepted' => 1] && $refusedOnce->calls === 2, 'bağlantı kurulamayan (ConnectionException) POST yeniden denenir');
+
+[$hs, $t] = $make([]);
+try {
+    $hs->events->send([]);
+    $assert(false, 'ağ hatası istisna fırlatmalı');
+} catch (HeroSignalException $e) {
+    $assert($e->status === 0 && count($t->calls) === 1, 'gönderildikten sonra kopan anahtarsız POST tekrarlanmaz');
+}
+
+if (extension_loaded('curl')) {
+    $sock = stream_socket_server('tcp://127.0.0.1:0');
+    $port = (int) substr((string) strrchr((string) stream_socket_get_name($sock, false), ':'), 1);
+    fclose($sock);
+    $slept = [];
+    $hs = new Client(['api_key' => 'k', 'base_url' => "http://127.0.0.1:$port", 'app_id' => 'app_1', 'max_retries' => 1, 'sleep' => static function (int $ms) use (&$slept): void { $slept[] = $ms; }]);
+    try {
+        $hs->events->send([]);
+        $assert(false, 'kapalı port istisna fırlatmalı');
+    } catch (\HeroSignal\ConnectionException $e) {
+        $assert($e->status === 0 && $e->errorCode === 'NETWORK' && $slept === [300], 'gerçek bağlantı reddinde (cURL) POST yeniden denenir');
+    }
+}
+
+echo "inAppMessages.selectWinner" . PHP_EOL;
+[$hs, $t] = $make([$ok]);
+$hs->inAppMessages->selectWinner('iam_1', 'b');
+$assert($t->calls[0]['method'] === 'POST' && $t->calls[0]['url'] === 'https://api.test/v1/apps/app_1/in-app-messages/iam_1/winner' && $t->calls[0]['body'] === '{"variant_id":"b"}', 'A/B kazananı POST edilir');
+
 echo "identityHash" . PHP_EOL;
 $assert(Client::identityHash('secret', 'u-1') === hash_hmac('sha256', 'u-1', 'secret'), 'HMAC-SHA256 eşleşir');
 
-echo "Webhook imza doğrulama" . PHP_EOL;
-$secret = 'whsec_test_secret';
-$body = '{"id":"whe_1","type":"user.created","created_at":"2026-10-07T00:00:00Z","app_id":"app_1","data":{"user":{"id":"usr_1"}}}';
-$ts = 1800000000;
-$sig = static fn (string $s, string $p) => hash_hmac('sha256', $ts . '.' . $p, $s);
-$header = "t=$ts,v1=" . $sig($secret, $body);
-$assert(\HeroSignal\Webhook::verify($body, $header, $secret, 300, $ts) === null, 'geçerli imza');
-$assert(\HeroSignal\Webhook::verify($body . ' ', $header, $secret, 300, $ts) === 'signature_mismatch', 'değişmiş gövde reddedilir');
-$assert(\HeroSignal\Webhook::verify($body, $header, $secret, 300, $ts + 301) === 'timestamp_out_of_tolerance', 'replay (eski t) reddedilir');
-$assert(\HeroSignal\Webhook::verify($body, null, $secret) === 'missing_header', 'eksik başlık');
-$rot = "t=$ts,v1=" . $sig('yeni', $body) . ',v1=' . $sig($secret, $body);
-$assert(\HeroSignal\Webhook::verify($body, $rot, ['yeni'], 300, $ts) === null, 'rotasyonda yeni secret');
-$assert(\HeroSignal\Webhook::verify($body, $rot, $secret, 300, $ts) === null, 'rotasyonda eski secret');
-$events = \HeroSignal\Webhook::constructEvents($body, $header, $secret, 300, $ts);
-$assert(count($events) === 1 && $events[0]['type'] === 'user.created', 'tekil olay ayrıştırılır');
-$batch = '{"events":[' . $body . ',' . $body . ']}';
-$assert(count(\HeroSignal\Webhook::constructEvents($batch, "t=$ts,v1=" . $sig($secret, $batch), $secret, 300, $ts)) === 2, 'batch gövdesi');
-try {
-    \HeroSignal\Webhook::constructEvents($body, 'v1=00', $secret);
-    $assert(false, 'geçersiz başlık istisna fırlatmalı');
-} catch (\HeroSignal\WebhookSignatureException $e) {
-    $assert($e->reason === 'malformed_header', 'WebhookSignatureException nedeni');
+echo "Webhook imza doğrulama (ortak vektörler)" . PHP_EOL;
+/** @var array{cases: array<int, array{name:string, toleranceSeconds:int, payload:string, header:?string, secrets:string[], now:int, expected:array{ok:bool, timestamp?:int, reason?:string}, events?:int}>} $vectors */
+$vectors = json_decode((string) file_get_contents(__DIR__ . '/../../testdata/webhook-signature-vectors.json'), true, 512, JSON_THROW_ON_ERROR);
+$assert(count($vectors['cases']) > 10, 'vektör dosyası yüklendi');
+foreach ($vectors['cases'] as $case) {
+    $secret = count($case['secrets']) === 1 ? $case['secrets'][0] : $case['secrets'];
+    $expectedReason = $case['expected']['ok'] ? null : $case['expected']['reason'];
+    $reason = \HeroSignal\Webhook::verify($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
+    $assert($reason === $expectedReason, $case['name']);
+    $assert(
+        \HeroSignal\Webhook::verify($case['payload'], $case['header'], $case['secrets'], $case['toleranceSeconds'], $case['now']) === $expectedReason,
+        $case['name'] . ' (secret dizisi)',
+    );
+    if (isset($case['events'])) {
+        $events = \HeroSignal\Webhook::constructEvents($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
+        $assert(count($events) === $case['events'], $case['name'] . ': olay sayısı');
+    } elseif ($expectedReason !== null) {
+        try {
+            \HeroSignal\Webhook::constructEvents($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
+            $assert(false, $case['name'] . ': istisna fırlatmalı');
+        } catch (\HeroSignal\WebhookSignatureException $e) {
+            $assert($e->reason === $expectedReason, $case['name'] . ': WebhookSignatureException nedeni');
+        }
+    }
 }
 
 echo "Suppression list" . PHP_EOL;
@@ -436,12 +523,12 @@ $assert($csv === "date,sent\n2026-10-01,5\n" && str_contains($t->calls[0]['url']
 
 echo "Import (multipart) ve yeniden deneme" . PHP_EOL;
 $t = new FakeTransport([
-    ['status' => 503, 'body' => '{"error":{"code":"HS_UNAVAILABLE","message":"meşgul"}}'],
+    ['status' => 429, 'body' => '{"error":{"code":"HS_RATE_LIMITED","message":"meşgul"}}'],
     ['status' => 200, 'body' => '{"id":"imp_1","status":"pending"}'],
 ]);
 $hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
 $import = $hs->imports->create('csv_users', "external_id,email\nu1,a@example.com\n", 'kullanicilar.csv');
-$assert($import['id'] === 'imp_1' && count($t->calls) === 2, '503 sonrası yeniden denendi');
+$assert($import['id'] === 'imp_1' && count($t->calls) === 2, '429 sonrası yeniden denendi');
 $ct = $t->calls[1]['headers']['Content-Type'] ?? '';
 $assert(preg_match('/^multipart\/form-data; boundary=(\S+)$/', $ct, $bm) === 1, 'multipart Content-Type ve boundary');
 $mp = (string) $t->calls[1]['body'];
