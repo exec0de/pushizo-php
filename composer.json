@@ -3,7 +3,6 @@
   "description": "HeroSignal PHP sunucu SDK'sı: public API'nin tamamı (bildirim, kullanıcı, segment, şablon, kampanya, analitik, veri aktarımı, webhook…)",
   "type": "library",
   "license": "MIT",
-  "version": "0.1.0",
   "homepage": "https://github.com/exec0de/herosignal/tree/main/sdk/php",
   "keywords": [
     "herosignal",
