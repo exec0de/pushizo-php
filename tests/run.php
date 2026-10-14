@@ -207,6 +207,7 @@ $table = [
     'GET /v1/organization' => fn (Client $c) => $c->organization->get(),
     'GET /v1/organization/members' => fn (Client $c) => $c->organization->members(),
     'GET /v1/organization/audit-logs' => fn (Client $c) => $c->organization->auditLogs(['action' => 'app.update']),
+    'GET /v1/organization/usage' => fn (Client $c) => $c->organization->usage(['days' => 30]),
     'GET /v1/apps' => fn (Client $c) => $c->apps->list(),
     'POST /v1/apps' => fn (Client $c) => $c->apps->create(['name' => 'Yeni app']),
     'GET /v1/apps/{appId}' => fn (Client $c) => $c->apps->get(),
@@ -348,7 +349,7 @@ $table = [
     'GET /v1/apps/{appId}/users/by/{label}/{value}/journeys' => fn (Client $c) => $c->journeys->listForUser('external_id', 'u1'),
 ];
 
-$assert(count($specOps) >= 141, 'spec en az 141 public işlem içerir (' . count($specOps) . ')');
+$assert(count($specOps) >= 142, 'spec en az 142 public işlem içerir (' . count($specOps) . ')');
 $missing = array_values(array_diff($specOps, array_keys($table)));
 $assert($missing === [], 'her spec işlemi tabloda' . ($missing === [] ? '' : ': eksik ' . implode(', ', $missing)));
 $stale = array_values(array_diff(array_keys($table), $specOps));

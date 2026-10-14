@@ -33,7 +33,7 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 
 | Kaynak | Metotlar |
 | --- | --- |
-| `organization` | `get`, `members`, `auditLogs` |
+| `organization` | `get`, `members`, `auditLogs`, `usage` |
 | `apps` | `list`, `create`, `get`, `update`, `organization` (eski kısayol) |
 | `apiKeys` | `list`, `create`, `update`, `revoke`, `rotate` |
 | `notifications` | `create`, `list`, `get`, `cancel`, `estimate`, `deliveries`, `history`, `exportEvents` |
