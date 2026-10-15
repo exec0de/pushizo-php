@@ -46,6 +46,7 @@ final class Client
     public readonly Resources\Organization $organization;
     public readonly Resources\ApiKeys $apiKeys;
     public readonly Resources\IdentityKeys $identityKeys;
+    public readonly Resources\LiveActivities $liveActivities;
     public readonly Resources\Webhooks $webhooks;
     public readonly Resources\Segments $segments;
     public readonly Resources\Templates $templates;
@@ -90,6 +91,7 @@ final class Client
         $this->organization = new Resources\Organization($this);
         $this->apiKeys = new Resources\ApiKeys($this);
         $this->identityKeys = new Resources\IdentityKeys($this);
+        $this->liveActivities = new Resources\LiveActivities($this);
         $this->webhooks = new Resources\Webhooks($this);
         $this->segments = new Resources\Segments($this);
         $this->templates = new Resources\Templates($this);
