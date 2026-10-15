@@ -52,7 +52,16 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 | `imports` | `create` (CSV metni, multipart), `createFromFile`, `list`, `get` |
 | `channels` | `list`, `upsert`, `validate` |
 | `suppressions` | `list`, `create`, `delete` |
-| `webhooks` | `list`, `create`, `get`, `update`, `delete`, `rotateSecret`, `test`, `deliveries`, `replay` |
+| `webhooks` | `list`, `create`, `get`, `update`, `delete`, `rotateSecret`, `test`, `deliveries`, `replay`, `preview` |
+| `dataFeeds` | `list`, `create`, `get`, `update`, `delete`, `test` |
+| `contentTables` | `list`, `create` (CSV metni, multipart), `createFromFile`, `get`, `update`, `delete`, `rows`, `replaceRows`, `replaceRowsFromFile` |
+| `warehouseExports` | `tables`, `testConnection`, `list`, `create`, `get`, `update`, `delete`, `test`, `run`, `runs` |
+| `conversations` | `list`, `get`, `messages`, `reply`, `markRead` |
+| `smsKeywords` | `list`, `create`, `update`, `delete` |
+| `whatsappTemplates` | `list`, `sync` |
+| `emailDeliverability` | `get`, `update`, `verifyAddress`, `listWarmupPlans`, `createWarmupPlan`, `updateWarmupPlan`, `deleteWarmupPlan` |
+| `zapier` | `me`, `subscribe`, `unsubscribe`, `samples` |
+| `mcp` | `createCampaignDraft`, `createSegmentDraft` |
 
 Webhook alıcıları için `HeroSignal\Webhook::verify()` ve `constructEvents()` kullanılır.
 
@@ -153,6 +162,34 @@ $stats = $hs->journeys->stats($journey['id'], ['version' => $published['version'
 foreach ($hs->paginate(fn (?string $c) => $hs->journeys->listRuns($journey['id'], ['status' => 'waiting', 'cursor' => $c])) as $r) {
     echo $r['id'], ' ', $r['current_node_id'], PHP_EOL;
 }
+```
+
+## Dinamik içerik, mesajlaşma ve veri ambarı
+
+```php
+// Data feed ve içerik tablosu (şablonda {{ feed.stok.adet }} ve tablo araması)
+$feed = $hs->dataFeeds->create(['name' => 'stok', 'url_template' => 'https://example.com/stok/{{ user.external_id }}']);
+$hs->dataFeeds->test($feed['id'], ['external_id' => 'u-1']);
+$table = $hs->contentTables->createFromFile(['name' => 'urunler', 'key_column' => 'sku'], __DIR__ . '/urunler.csv');
+$hs->contentTables->replaceRowsFromFile($table['id'], __DIR__ . '/urunler-yeni.csv'); // sürüm artar
+
+// İki yönlü konuşmalar (WhatsApp 24 saat penceresi dışında yalnızca onaylı şablon)
+foreach ($hs->paginate(fn (?string $c) => $hs->conversations->list(['unread' => true, 'cursor' => $c])) as $conv) {
+    $hs->conversations->reply($conv['id'], ['text' => 'Teşekkürler, inceliyoruz.']);
+    $hs->conversations->markRead($conv['id']);
+}
+
+// E-posta adres doğrulama ve ısındırma planı
+$hs->emailDeliverability->verifyAddress('ayse@example.com');
+$hs->emailDeliverability->createWarmupPlan(['name' => 'Yeni alan adı', 'kind' => 'domain', 'target' => 'mail.example.com']);
+
+// Veri ambarı dışa aktarımı: kimlik bilgisi şifreli saklanır, yanıtta dönmez
+$export = $hs->warehouseExports->create([
+    'name' => 'BigQuery', 'tables' => ['events', 'deliveries'], 'destination' => 'bigquery',
+    'config' => ['project_id' => 'proje-1', 'dataset' => 'herosignal'],
+    'credentials' => ['service_account_json' => getenv('GCP_SA_JSON')],
+]);
+$hs->warehouseExports->run($export['id']);
 ```
 
 ## Geliştirme

@@ -76,6 +76,17 @@ final class Webhooks
     }
 
     /**
+     * Event Streams önizlemesi: örnek olay + gövde şablonu + filtre → oluşan gövde veya hata (gönderim yapmaz).
+     *
+     * @param array{event_type:string, data?:array<string, mixed>, body_template?:?string, body_content_type?:'application/json'|'text/plain', filters?:mixed, batch?:bool} $input
+     * @return array<string, mixed>
+     */
+    public function preview(array $input, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->base($appId) . '/preview', [], $input);
+    }
+
+    /**
      * @param array{limit?:int, cursor?:string, status?:'pending'|'success'|'failed'|'dead', event_type?:string} $params
      * @return array<string, mixed>
      */

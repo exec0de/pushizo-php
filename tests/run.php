@@ -470,6 +470,61 @@ $table = [
     'GET /v1/apps/{appId}/journeys/{journeyId}/runs/{runId}' => fn (Client $c) => $c->journeys->getRun('jrn_1', 'run_1'),
     'DELETE /v1/apps/{appId}/journeys/{journeyId}/runs/{runId}' => fn (Client $c) => $c->journeys->exitRun('jrn_1', 'run_1'),
     'GET /v1/apps/{appId}/users/by/{label}/{value}/journeys' => fn (Client $c) => $c->journeys->listForUser('external_id', 'u1'),
+    // v2: dinamik içerik
+    'GET /v1/apps/{appId}/data-feeds' => fn (Client $c) => $c->dataFeeds->list(),
+    'POST /v1/apps/{appId}/data-feeds' => fn (Client $c) => $c->dataFeeds->create(['name' => 'stok', 'url_template' => 'https://example.com/stok/{{ user.external_id }}']),
+    'GET /v1/apps/{appId}/data-feeds/{feedId}' => fn (Client $c) => $c->dataFeeds->get('df_1'),
+    'PATCH /v1/apps/{appId}/data-feeds/{feedId}' => fn (Client $c) => $c->dataFeeds->update('df_1', ['enabled' => false]),
+    'DELETE /v1/apps/{appId}/data-feeds/{feedId}' => fn (Client $c) => $c->dataFeeds->delete('df_1'),
+    'POST /v1/apps/{appId}/data-feeds/{feedId}/test' => fn (Client $c) => $c->dataFeeds->test('df_1', ['external_id' => 'u1']),
+    'GET /v1/apps/{appId}/content-tables' => fn (Client $c) => $c->contentTables->list(),
+    'POST /v1/apps/{appId}/content-tables' => fn (Client $c) => $c->contentTables->create(['name' => 'urunler', 'key_column' => 'sku'], "sku,ad\nA1,Kalem\n"),
+    'GET /v1/apps/{appId}/content-tables/{tableId}' => fn (Client $c) => $c->contentTables->get('ct_1'),
+    'PATCH /v1/apps/{appId}/content-tables/{tableId}' => fn (Client $c) => $c->contentTables->update('ct_1', ['description' => 'Ürün kataloğu']),
+    'DELETE /v1/apps/{appId}/content-tables/{tableId}' => fn (Client $c) => $c->contentTables->delete('ct_1'),
+    'GET /v1/apps/{appId}/content-tables/{tableId}/rows' => fn (Client $c) => $c->contentTables->rows('ct_1', ['limit' => 50]),
+    'PUT /v1/apps/{appId}/content-tables/{tableId}/rows' => fn (Client $c) => $c->contentTables->replaceRows('ct_1', "sku,ad\nA2,Defter\n"),
+    'POST /v1/apps/{appId}/webhooks/preview' => fn (Client $c) => $c->webhooks->preview(['event_type' => 'user.created']),
+    // v2: veri ambarı dışa aktarımları
+    'GET /v1/apps/{appId}/warehouse-exports/tables' => fn (Client $c) => $c->warehouseExports->tables(),
+    'POST /v1/apps/{appId}/warehouse-exports/test-connection' => fn (Client $c) => $c->warehouseExports->testConnection(['destination' => 'bigquery', 'config' => ['project_id' => 'proje-1', 'dataset' => 'hs'], 'credentials' => ['service_account_json' => '{}']]),
+    'GET /v1/apps/{appId}/warehouse-exports' => fn (Client $c) => $c->warehouseExports->list(),
+    'POST /v1/apps/{appId}/warehouse-exports' => fn (Client $c) => $c->warehouseExports->create(['name' => 'BQ', 'tables' => ['events'], 'destination' => 'bigquery', 'config' => ['project_id' => 'proje-1', 'dataset' => 'hs'], 'credentials' => ['service_account_json' => '{}']]),
+    'GET /v1/apps/{appId}/warehouse-exports/{exportId}' => fn (Client $c) => $c->warehouseExports->get('wex_1'),
+    'PATCH /v1/apps/{appId}/warehouse-exports/{exportId}' => fn (Client $c) => $c->warehouseExports->update('wex_1', ['enabled' => false]),
+    'DELETE /v1/apps/{appId}/warehouse-exports/{exportId}' => fn (Client $c) => $c->warehouseExports->delete('wex_1'),
+    'POST /v1/apps/{appId}/warehouse-exports/{exportId}/test' => fn (Client $c) => $c->warehouseExports->test('wex_1'),
+    'POST /v1/apps/{appId}/warehouse-exports/{exportId}/run' => fn (Client $c) => $c->warehouseExports->run('wex_1'),
+    'GET /v1/apps/{appId}/warehouse-exports/{exportId}/runs' => fn (Client $c) => $c->warehouseExports->runs('wex_1'),
+    // v2: iki yönlü mesajlaşma
+    'GET /v1/apps/{appId}/conversations' => fn (Client $c) => $c->conversations->list(['unread' => true]),
+    'GET /v1/apps/{appId}/conversations/{conversationId}' => fn (Client $c) => $c->conversations->get('cnv_1'),
+    'GET /v1/apps/{appId}/conversations/{conversationId}/messages' => fn (Client $c) => $c->conversations->messages('cnv_1'),
+    'POST /v1/apps/{appId}/conversations/{conversationId}/messages' => fn (Client $c) => $c->conversations->reply('cnv_1', ['text' => 'Merhaba']),
+    'POST /v1/apps/{appId}/conversations/{conversationId}/read' => fn (Client $c) => $c->conversations->markRead('cnv_1'),
+    'GET /v1/apps/{appId}/sms-keywords' => fn (Client $c) => $c->smsKeywords->list(),
+    'POST /v1/apps/{appId}/sms-keywords' => fn (Client $c) => $c->smsKeywords->create(['keyword' => 'KAMPANYA', 'actions' => ['add_tags' => ['kampanya' => '1']]]),
+    'PATCH /v1/apps/{appId}/sms-keywords/{keywordId}' => fn (Client $c) => $c->smsKeywords->update('kw_1', ['enabled' => false]),
+    'DELETE /v1/apps/{appId}/sms-keywords/{keywordId}' => fn (Client $c) => $c->smsKeywords->delete('kw_1'),
+    'GET /v1/apps/{appId}/whatsapp/templates' => fn (Client $c) => $c->whatsappTemplates->list(['status' => 'APPROVED']),
+    'POST /v1/apps/{appId}/whatsapp/templates/sync' => fn (Client $c) => $c->whatsappTemplates->sync(),
+    // v2: e-posta teslim edilebilirliği
+    'GET /v1/apps/{appId}/email-deliverability' => fn (Client $c) => $c->emailDeliverability->get(),
+    'PUT /v1/apps/{appId}/email-deliverability' => fn (Client $c) => $c->emailDeliverability->update(['bcc_address' => 'arsiv@example.com']),
+    'POST /v1/apps/{appId}/email-deliverability/verify-address' => fn (Client $c) => $c->emailDeliverability->verifyAddress('a@example.com'),
+    'GET /v1/apps/{appId}/email-deliverability/warmup-plans' => fn (Client $c) => $c->emailDeliverability->listWarmupPlans(),
+    'POST /v1/apps/{appId}/email-deliverability/warmup-plans' => fn (Client $c) => $c->emailDeliverability->createWarmupPlan(['name' => 'Yeni alan', 'kind' => 'domain', 'target' => 'mail.example.com']),
+    'GET /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}' => fn (Client $c) => $c->emailDeliverability->getWarmupPlan('wup_1'),
+    'GET /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}/usage' => fn (Client $c) => $c->emailDeliverability->warmupPlanUsage('wup_1', 7),
+    'PATCH /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}' => fn (Client $c) => $c->emailDeliverability->updateWarmupPlan('wup_1', ['status' => 'paused']),
+    'DELETE /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}' => fn (Client $c) => $c->emailDeliverability->deleteWarmupPlan('wup_1'),
+    // v2: Zapier ve MCP
+    'GET /v1/apps/{appId}/integrations/zapier/me' => fn (Client $c) => $c->zapier->me(),
+    'POST /v1/apps/{appId}/integrations/zapier/hooks' => fn (Client $c) => $c->zapier->subscribe(['target_url' => 'https://hooks.zapier.com/x', 'event' => 'user.created']),
+    'DELETE /v1/apps/{appId}/integrations/zapier/hooks/{hookId}' => fn (Client $c) => $c->zapier->unsubscribe('zh_1'),
+    'GET /v1/apps/{appId}/integrations/zapier/samples' => fn (Client $c) => $c->zapier->samples(['event' => 'user.created']),
+    'POST /v1/apps/{appId}/mcp/campaign-drafts' => fn (Client $c) => $c->mcp->createCampaignDraft(['name' => 'Taslak']),
+    'POST /v1/apps/{appId}/mcp/segment-drafts' => fn (Client $c) => $c->mcp->createSegmentDraft(['name' => 'VIP', 'definition' => $definition]),
 ];
 
 $assert(count($specOps) >= 142, 'spec en az 142 public işlem içerir (' . count($specOps) . ')');
@@ -523,6 +578,34 @@ $hs->analytics->messages(['from' => '2026-10-01T00:00:00Z', 'compare' => true, '
 $assert($t->calls[13]['url'] === 'https://api.test/v1/apps/app_1/analytics/messages?from=2026-10-01T00%3A00%3A00Z&compare=true&group_by=channel', 'analytics.messages sorgusu');
 $hs->organization->auditLogs(['app_id' => 'app_1', 'action' => 'api_key.rotate']);
 $assert($t->calls[14]['url'] === 'https://api.test/v1/organization/audit-logs?app_id=app_1&action=api_key.rotate', 'organization.auditLogs filtreleri');
+
+echo "v2 kaynakları: istek şekilleri" . PHP_EOL;
+$t = new FakeTransport(array_fill(0, 10, ['status' => 200, 'body' => '{"id":"x"}']));
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
+$hs->contentTables->create(['name' => 'urunler', 'key_column' => 'sku', 'description' => 'Ürün kataloğu'], "sku,ad\nA1,Kalem\n", 'urunler.csv');
+$ct = $t->calls[0]['headers']['Content-Type'] ?? '';
+$body = (string) $t->calls[0]['body'];
+$assert($t->calls[0]['method'] === 'POST' && str_starts_with($ct, 'multipart/form-data; boundary=')
+    && str_contains($body, "name=\"name\"\r\n\r\nurunler\r\n") && str_contains($body, "name=\"key_column\"\r\n\r\nsku\r\n")
+    && str_contains($body, "name=\"description\"\r\n\r\nÜrün kataloğu\r\n") && str_contains($body, 'filename="urunler.csv"'), 'contentTables.create multipart alanları');
+$hs->contentTables->replaceRows('ct/1', "sku\nA2\n");
+$body = (string) $t->calls[1]['body'];
+$assert($t->calls[1]['method'] === 'PUT' && $t->calls[1]['url'] === 'https://api.test/v1/apps/app_1/content-tables/ct%2F1/rows'
+    && !str_contains($body, 'name="key_column"') && str_contains($body, 'name="file"'), 'contentTables.replaceRows anahtar sütunu isteğe bağlı');
+$hs->contentTables->rows('ct_1', ['limit' => 10, 'offset' => 20, 'q' => 'A1']);
+$assert($t->calls[2]['url'] === 'https://api.test/v1/apps/app_1/content-tables/ct_1/rows?limit=10&offset=20&q=A1', 'contentTables.rows sorgusu');
+$hs->dataFeeds->test('df_1');
+$assert($t->calls[3]['body'] === '{}', 'dataFeeds.test boş gövde JSON nesnesi');
+$hs->conversations->list(['channel' => 'whatsapp', 'unread' => true]);
+$assert($t->calls[4]['url'] === 'https://api.test/v1/apps/app_1/conversations?channel=whatsapp&unread=true', 'conversations.list boolean filtre');
+$hs->conversations->markRead('cnv_1', 'app_9');
+$assert($t->calls[5]['method'] === 'POST' && $t->calls[5]['url'] === 'https://api.test/v1/apps/app_9/conversations/cnv_1/read' && $t->calls[5]['body'] === null, 'conversations.markRead gövdesiz POST');
+$hs->emailDeliverability->verifyAddress('ayşe@example.com');
+$assert($t->calls[6]['body'] === '{"address":"ayşe@example.com"}', 'emailDeliverability.verifyAddress gövdesi (UTF-8)');
+$hs->zapier->samples(['event' => 'event.received', 'event_name' => 'purchase']);
+$assert($t->calls[7]['url'] === 'https://api.test/v1/apps/app_1/integrations/zapier/samples?event=event.received&event_name=purchase', 'zapier.samples sorgusu');
+$hs->warehouseExports->run('wex_1');
+$assert($t->calls[8]['method'] === 'POST' && $t->calls[8]['url'] === 'https://api.test/v1/apps/app_1/warehouse-exports/wex_1/run' && $t->calls[8]['body'] === null, 'warehouseExports.run gövdesiz POST');
 
 echo "Journey'ler: istek şekilleri" . PHP_EOL;
 $t = new FakeTransport(array_fill(0, 12, ['status' => 200, 'body' => '{"id":"jrn_1"}']));

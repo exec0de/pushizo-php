@@ -58,6 +58,15 @@ final class Client
     public readonly Resources\Analytics $analytics;
     public readonly Resources\Exports $exports;
     public readonly Resources\Imports $imports;
+    public readonly Resources\DataFeeds $dataFeeds;
+    public readonly Resources\ContentTables $contentTables;
+    public readonly Resources\WarehouseExports $warehouseExports;
+    public readonly Resources\Conversations $conversations;
+    public readonly Resources\SmsKeywords $smsKeywords;
+    public readonly Resources\WhatsAppTemplates $whatsappTemplates;
+    public readonly Resources\EmailDeliverability $emailDeliverability;
+    public readonly Resources\Zapier $zapier;
+    public readonly Resources\Mcp $mcp;
 
     /**
      * @param array{
@@ -103,6 +112,15 @@ final class Client
         $this->analytics = new Resources\Analytics($this);
         $this->exports = new Resources\Exports($this);
         $this->imports = new Resources\Imports($this);
+        $this->dataFeeds = new Resources\DataFeeds($this);
+        $this->contentTables = new Resources\ContentTables($this);
+        $this->warehouseExports = new Resources\WarehouseExports($this);
+        $this->conversations = new Resources\Conversations($this);
+        $this->smsKeywords = new Resources\SmsKeywords($this);
+        $this->whatsappTemplates = new Resources\WhatsAppTemplates($this);
+        $this->emailDeliverability = new Resources\EmailDeliverability($this);
+        $this->zapier = new Resources\Zapier($this);
+        $this->mcp = new Resources\Mcp($this);
     }
 
     /** SDK identity verification: `identity_hash` = HMAC-SHA256(sdk_secret, external_id). */
