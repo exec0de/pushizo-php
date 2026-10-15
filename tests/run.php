@@ -195,6 +195,31 @@ $assert($t->calls[0]['method'] === 'POST' && $t->calls[0]['url'] === 'https://ap
 echo "identityHash" . PHP_EOL;
 $assert(Client::identityHash('secret', 'u-1') === hash_hmac('sha256', 'u-1', 'secret'), 'HMAC-SHA256 eşleşir');
 
+echo "identityToken (ES256 JWT)" . PHP_EOL;
+$ecKey = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']);
+if ($ecKey === false) {
+    // Bazı Windows PHP paketleri (ör. XAMPP) openssl.cnf olmadan EC anahtarı üretemez; CI'daki Linux PHP'de test tam koşar.
+    $assert(true, 'OpenSSL EC anahtar üretimi bu PHP kurulumunda yok; atlandı (CI Linux PHP ortamında koşar)');
+} else {
+    openssl_pkey_export($ecKey, $ecPem);
+    $jwt = Client::identityToken($ecPem, 'main', 'app_1', 'kullanici-1', 600, 1800000000);
+    [$h, $p, $sig] = explode('.', $jwt);
+    $dec = static fn (string $v): string => (string) base64_decode(strtr($v, '-_', '+/') . str_repeat('=', (4 - strlen($v) % 4) % 4));
+    $assert(json_decode($dec($h), true) === ['alg' => 'ES256', 'typ' => 'JWT', 'kid' => 'main'], 'başlık');
+    $assert(json_decode($dec($p), true) === ['sub' => 'kullanici-1', 'aud' => 'app_1', 'iat' => 1800000000, 'exp' => 1800000600], 'talepler');
+    $raw = $dec($sig);
+    $assert(strlen($raw) === 64, 'r||s 64 bayt');
+    // r||s → DER (doğrulama için).
+    $int = static function (string $b): string { $b = ltrim($b, "\x00"); if ($b === '' || (ord($b[0]) & 0x80)) { $b = "\x00" . $b; } return "\x02" . chr(strlen($b)) . $b; };
+    $seq = $int(substr($raw, 0, 32)) . $int(substr($raw, 32));
+    $der = "\x30" . chr(strlen($seq)) . $seq;
+    $pub = openssl_pkey_get_details($ecKey)['key'];
+    $assert(openssl_verify($h . '.' . $p, $der, $pub, OPENSSL_ALGO_SHA256) === 1, 'imza genel anahtarla doğrulanır');
+    $threw = false;
+    try { Client::identityToken($ecPem, 'k', 'a', 'e', 90000); } catch (\InvalidArgumentException) { $threw = true; }
+    $assert($threw, '24 saatten uzun ömür reddedilir');
+}
+
 echo "Webhook imza doğrulama (ortak vektörler)" . PHP_EOL;
 /** @var array{cases: array<int, array{name:string, toleranceSeconds:int, payload:string, header:?string, secrets:string[], now:int, expected:array{ok:bool, timestamp?:int, reason?:string}, events?:int}>} $vectors */
 $vectors = json_decode((string) file_get_contents(__DIR__ . '/../../testdata/webhook-signature-vectors.json'), true, 512, JSON_THROW_ON_ERROR);
@@ -303,6 +328,9 @@ $table = [
     'POST /v1/apps/{appId}/api-keys' => fn (Client $c) => $c->apiKeys->create(['name' => 'ci', 'scopes' => ['notifications:write']]),
     'PATCH /v1/apps/{appId}/api-keys/{keyId}' => fn (Client $c) => $c->apiKeys->update('key_1', ['name' => 'x']),
     'DELETE /v1/apps/{appId}/api-keys/{keyId}' => fn (Client $c) => $c->apiKeys->revoke('key_1'),
+    'GET /v1/apps/{appId}/identity-keys' => fn (Client $c) => $c->identityKeys->list(),
+    'POST /v1/apps/{appId}/identity-keys' => fn (Client $c) => $c->identityKeys->create(['kid' => 'main', 'public_key_pem' => 'pem']),
+    'DELETE /v1/apps/{appId}/identity-keys/{keyId}' => fn (Client $c) => $c->identityKeys->revoke('ajk_1'),
     'POST /v1/apps/{appId}/api-keys/{keyId}/rotate' => fn (Client $c) => $c->apiKeys->rotate('key_1'),
     'GET /v1/apps/{appId}/webhooks' => fn (Client $c) => $c->webhooks->list(),
     'POST /v1/apps/{appId}/webhooks' => fn (Client $c) => $c->webhooks->create(['url' => 'https://example.com/h', 'events' => ['user.created']]),

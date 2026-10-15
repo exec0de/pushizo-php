@@ -45,6 +45,7 @@ final class Client
     public readonly Resources\Suppressions $suppressions;
     public readonly Resources\Organization $organization;
     public readonly Resources\ApiKeys $apiKeys;
+    public readonly Resources\IdentityKeys $identityKeys;
     public readonly Resources\Webhooks $webhooks;
     public readonly Resources\Segments $segments;
     public readonly Resources\Templates $templates;
@@ -88,6 +89,7 @@ final class Client
         $this->suppressions = new Resources\Suppressions($this);
         $this->organization = new Resources\Organization($this);
         $this->apiKeys = new Resources\ApiKeys($this);
+        $this->identityKeys = new Resources\IdentityKeys($this);
         $this->webhooks = new Resources\Webhooks($this);
         $this->segments = new Resources\Segments($this);
         $this->templates = new Resources\Templates($this);
@@ -105,6 +107,47 @@ final class Client
     public static function identityHash(string $sdkSecret, string $externalId): string
     {
         return hash_hmac('sha256', $externalId, $sdkSecret);
+    }
+
+    /**
+     * SDK JWT identity verification belirteci (ES256; `sub` = external_id, `aud` = app_id). Uygulamanız belirteci
+     * sunucunuzdan alıp SDK'ya `login(externalId, jwt)` ile verir. Ömür en çok 86 400 sn.
+     */
+    public static function identityToken(string $privateKeyPem, string $kid, string $appId, string $externalId, int $expiresInSeconds = 3600, ?int $now = null): string
+    {
+        if ($expiresInSeconds <= 0 || $expiresInSeconds > 86400) {
+            throw new \InvalidArgumentException('expiresInSeconds 1…86400 aralığında olmalı.');
+        }
+        $iat = $now ?? time();
+        $b64 = static fn (string $v): string => rtrim(strtr(base64_encode($v), '+/', '-_'), '=');
+        $header = $b64((string) json_encode(['alg' => 'ES256', 'typ' => 'JWT', 'kid' => $kid]));
+        $payload = $b64((string) json_encode(['sub' => $externalId, 'aud' => $appId, 'iat' => $iat, 'exp' => $iat + $expiresInSeconds]));
+        $key = openssl_pkey_get_private($privateKeyPem);
+        if ($key === false) {
+            throw new \InvalidArgumentException('ES256 özel anahtarı okunamadı (PEM).');
+        }
+        $der = '';
+        if (!openssl_sign($header . '.' . $payload, $der, $key, OPENSSL_ALGO_SHA256)) {
+            throw new \RuntimeException('Belirteç imzalanamadı.');
+        }
+        return $header . '.' . $payload . '.' . $b64(self::derToJose($der));
+    }
+
+    /** OpenSSL ECDSA DER imzası (SEQUENCE{INTEGER r, INTEGER s}) → JWS r||s (P-256: 2×32 bayt). */
+    private static function derToJose(string $der): string
+    {
+        $offset = 2;
+        if ((ord($der[1]) & 0x80) !== 0) {
+            $offset += ord($der[1]) & 0x7f;
+        }
+        $parts = [];
+        for ($i = 0; $i < 2; $i++) {
+            $len = ord($der[$offset + 1]);
+            $int = substr($der, $offset + 2, $len);
+            $parts[] = str_pad(ltrim($int, "\x00"), 32, "\x00", STR_PAD_LEFT);
+            $offset += 2 + $len;
+        }
+        return $parts[0] . $parts[1];
     }
 
     public function appId(?string $appId = null): string
