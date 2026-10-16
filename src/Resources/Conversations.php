@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * İki yönlü mesajlaşma konuşmaları (SMS, WhatsApp, RCS). WhatsApp'ta son gelen mesajdan sonraki 24 saat dışında

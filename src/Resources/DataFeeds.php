@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * Data feed'ler (Connected Content): gönderim anında dış JSON uç noktasından içerik çeker; şablonda

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** Organizasyon uçları (org geneli admin anahtarı): bilgi, üyeler, audit log. */
 final class Organization

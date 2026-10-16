@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** Şablonlar: sürümlü içerik, render önizlemesi ve başka app'e kopyalama. */
 final class Templates

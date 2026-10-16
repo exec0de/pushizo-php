@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** Kullanıcının bildirim kutusu (inbox); kullanıcı alias (`label`/`value`) ile adreslenir. */
 final class Inbox

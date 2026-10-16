@@ -1,16 +1,16 @@
-# herosignal/herosignal-php
+# pushizo/pushizo-php
 
-HeroSignal PHP sunucu SDK'sı. PHP 8.1+, yalnızca `ext-curl` ve `ext-json`; ek Composer bağımlılığı yoktur.
+Pushizo PHP sunucu SDK'sı. PHP 8.1+, yalnızca `ext-curl` ve `ext-json`; ek Composer bağımlılığı yoktur.
 Yalnızca sunucuda kullanın; API anahtarını istemci koduna gömmeyin. Ayrıntılı rehber:
 [`docs/sdk/php.md`](../../docs/sdk/php.md).
 
 ## Başlatma
 
 ```php
-$hs = new \HeroSignal\Client([
+$hs = new \Pushizo\Client([
     'api_key' => getenv('HS_API_KEY'),   // hs_live_…
     'app_id' => getenv('HS_APP_ID'),     // çağrıda app verilmezse kullanılır
-    'base_url' => 'https://api.herosignal.dev',
+    'base_url' => 'https://api.pushizo.com',
     'max_retries' => 3,                  // 429 her metotta; 5xx/ağ hatası GET/PUT/DELETE'te, POST/PATCH'te yalnızca Idempotency-Key varsa veya istek gönderilemediyse
     'timeout' => 30,
     'auto_idempotency_key' => true,      // notifications->create ve users->upsert için otomatik UUID
@@ -21,7 +21,7 @@ Ortak davranışlar:
 
 - Kimlik doğrulama `Authorization: Bearer <api_key>` başlığıyla yapılır.
 - App kapsamlı her metodun son parametresi isteğe bağlı `?string $appId`'dir; verilmezse varsayılan app kullanılır.
-- Hata yanıtları `HeroSignal\HeroSignalException` (`status`, `errorCode`, `requestId`, `details`, `isRetryable()`) olarak fırlatılır.
+- Hata yanıtları `Pushizo\PushizoException` (`status`, `errorCode`, `requestId`, `details`, `isRetryable()`) olarak fırlatılır.
 - Sorgudaki boolean değerler `true`/`false` metnine çevrilir (`compare`, `include_archived`, `force`).
 - `$hs->paginate(fn (?string $c) => $hs->templates->list(['cursor' => $c]))` cursor sayfalı listeleri öğe öğe dolaşır.
 - Analitik raporlarında `'format' => 'csv'` verilirse yanıt CSV metni (`string`) olarak döner.
@@ -63,7 +63,7 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 | `zapier` | `me`, `subscribe`, `unsubscribe`, `samples` |
 | `mcp` | `createCampaignDraft`, `createSegmentDraft` |
 
-Webhook alıcıları için `HeroSignal\Webhook::verify()` ve `constructEvents()` kullanılır.
+Webhook alıcıları için `Pushizo\Webhook::verify()` ve `constructEvents()` kullanılır.
 
 ## Örnekler
 
@@ -186,7 +186,7 @@ $hs->emailDeliverability->createWarmupPlan(['name' => 'Yeni alan adı', 'kind' =
 // Veri ambarı dışa aktarımı: kimlik bilgisi şifreli saklanır, yanıtta dönmez
 $export = $hs->warehouseExports->create([
     'name' => 'BigQuery', 'tables' => ['events', 'deliveries'], 'destination' => 'bigquery',
-    'config' => ['project_id' => 'proje-1', 'dataset' => 'herosignal'],
+    'config' => ['project_id' => 'proje-1', 'dataset' => 'pushizo'],
     'credentials' => ['service_account_json' => getenv('GCP_SA_JSON')],
 ]);
 $hs->warehouseExports->run($export['id']);

@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal;
+namespace Pushizo;
 
 /**
  * Giden webhook imza doğrulaması (alıcı tarafı).
  *
- * Başlık: `HeroSignal-Signature: t=<unix>,v1=<hex>` — `v1 = HMAC-SHA256(secret, t . "." . ham_gövde)`.
+ * Başlık: `Pushizo-Signature: t=<unix>,v1=<hex>` — `v1 = HMAC-SHA256(secret, t . "." . ham_gövde)`.
  * Secret rotasyonunda başlıkta iki `v1` bulunabilir; herhangi biri eşleşirse geçerlidir.
  *
  * ```php
  * $payload = file_get_contents('php://input');               // ham gövde (json_decode etmeden)
- * $header = $_SERVER['HTTP_HEROSIGNAL_SIGNATURE'] ?? null;
+ * $header = $_SERVER['HTTP_PUSHIZO_SIGNATURE'] ?? null;
  * try {
- *     $events = HeroSignal\Webhook::constructEvents($payload, $header, getenv('HS_WEBHOOK_SECRET'));
- * } catch (HeroSignal\WebhookSignatureException $e) {
+ *     $events = Pushizo\Webhook::constructEvents($payload, $header, getenv('HS_WEBHOOK_SECRET'));
+ * } catch (Pushizo\WebhookSignatureException $e) {
  *     http_response_code(400);
  *     exit;
  * }
- * // HeroSignal-Event-Id ile tekrarları ayıklayın; 2xx ile hızlı yanıt verin.
+ * // Pushizo-Event-Id ile tekrarları ayıklayın; 2xx ile hızlı yanıt verin.
  * http_response_code(204);
  * ```
  */

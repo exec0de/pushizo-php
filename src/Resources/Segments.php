@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** Segmentler (`segments:read`; yazma `admin`): filtre AST'si (all/any/none, { field, op, value }) ile kitleler. */
 final class Segments

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal;
+namespace Pushizo;
 
 /**
  * İstek sunucuya hiç ulaşmadan oluşan ağ hatası (DNS çözümlenemedi, bağlantı reddedildi, bağlantı zaman aşımı).
  * Sunucu isteği almadığı için POST/PATCH dahil her metotta güvenle yeniden denenir. Özel taşımalar bağlantı
- * kurulamadığında bu istisnayı, istek gönderildikten sonraki hatalarda `HeroSignalException` (status 0) fırlatır.
+ * kurulamadığında bu istisnayı, istek gönderildikten sonraki hatalarda `PushizoException` (status 0) fırlatır.
  */
-final class ConnectionException extends HeroSignalException
+final class ConnectionException extends PushizoException
 {
     public function __construct(string $message)
     {

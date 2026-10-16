@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * Mesaj kategorileri ve kullanıcı tercihleri: kategori CRUD'u ve kullanıcının kategori/kanal bazlı

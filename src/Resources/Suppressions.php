@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * Suppression list API: /v1/apps/{app}/suppressions — e-posta/SMS gönderilmeyecek adresler.

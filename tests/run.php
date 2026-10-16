@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 // Bağımlılıksız test koşucusu: `php tests/run.php` (PHPUnit gerekmez).
 spl_autoload_register(static function (string $class): void {
-    $prefix = 'HeroSignal\\';
+    $prefix = 'Pushizo\\';
     if (str_starts_with($class, $prefix)) {
         $file = __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
         if (is_file($file)) {
@@ -13,9 +13,9 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-use HeroSignal\Client;
-use HeroSignal\HeroSignalException;
-use HeroSignal\Transport\TransportInterface;
+use Pushizo\Client;
+use Pushizo\PushizoException;
+use Pushizo\Transport\TransportInterface;
 
 final class FakeTransport implements TransportInterface
 {
@@ -34,7 +34,7 @@ final class FakeTransport implements TransportInterface
     {
         $this->calls[] = ['method' => $method, 'url' => $url, 'headers' => $headers, 'body' => $body];
         if ($this->responses === []) {
-            throw new HeroSignalException(0, 'NETWORK', 'bağlantı yok');
+            throw new PushizoException(0, 'NETWORK', 'bağlantı yok');
         }
         return array_shift($this->responses);
     }
@@ -87,8 +87,8 @@ $hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' =
 try {
     $hs->notifications->get('msg_x');
     $assert(false, '404 istisna fırlatmalı');
-} catch (HeroSignalException $e) {
-    $assert($e->status === 404 && $e->errorCode === 'HS_NOT_FOUND' && $e->requestId === 'req_1' && !$e->isRetryable(), '404 → HeroSignalException');
+} catch (PushizoException $e) {
+    $assert($e->status === 404 && $e->errorCode === 'HS_NOT_FOUND' && $e->requestId === 'req_1' && !$e->isRetryable(), '404 → PushizoException');
 }
 
 $t = new FakeTransport([]);
@@ -96,7 +96,7 @@ $hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' =
 try {
     $hs->apps->list();
     $assert(false, 'ağ hatası istisna fırlatmalı');
-} catch (HeroSignalException $e) {
+} catch (PushizoException $e) {
     $assert($e->status === 0 && $e->errorCode === 'NETWORK' && count($t->calls) === 2, 'ağ hatasında max_retries kadar denendi');
 }
 
@@ -119,7 +119,7 @@ $make = static function (array $responses, array $extra = []) use ($noSleep): ar
 try {
     $hs->events->send([['external_id' => 'u1', 'name' => 'purchase']]);
     $assert(false, 'anahtarsız POST 503 istisna fırlatmalı');
-} catch (HeroSignalException $e) {
+} catch (PushizoException $e) {
     $assert($e->status === 503 && count($t->calls) === 1, 'anahtarsız POST 503 sonrası yeniden denenmez');
 }
 
@@ -127,7 +127,7 @@ try {
 try {
     $hs->notifications->create(['target' => ['all' => true], 'contents' => ['en' => 'x']]);
     $assert(false, 'otomatik anahtar kapalı: 503 istisna fırlatmalı');
-} catch (HeroSignalException $e) {
+} catch (PushizoException $e) {
     $assert(count($t->calls) === 1, 'otomatik anahtar kapalıyken notifications.create tekrarlanmaz');
 }
 
@@ -157,7 +157,7 @@ $refusedOnce = new class implements TransportInterface {
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): array
     {
         if ($this->calls++ === 0) {
-            throw new \HeroSignal\ConnectionException('Failed to connect: Connection refused');
+            throw new \Pushizo\ConnectionException('Failed to connect: Connection refused');
         }
         return ['status' => 200, 'body' => '{"accepted":1}', 'headers' => []];
     }
@@ -169,7 +169,7 @@ $assert($hs->events->send([]) === ['accepted' => 1] && $refusedOnce->calls === 2
 try {
     $hs->events->send([]);
     $assert(false, 'ağ hatası istisna fırlatmalı');
-} catch (HeroSignalException $e) {
+} catch (PushizoException $e) {
     $assert($e->status === 0 && count($t->calls) === 1, 'gönderildikten sonra kopan anahtarsız POST tekrarlanmaz');
 }
 
@@ -182,7 +182,7 @@ if (extension_loaded('curl')) {
     try {
         $hs->events->send([]);
         $assert(false, 'kapalı port istisna fırlatmalı');
-    } catch (\HeroSignal\ConnectionException $e) {
+    } catch (\Pushizo\ConnectionException $e) {
         $assert($e->status === 0 && $e->errorCode === 'NETWORK' && $slept === [300], 'gerçek bağlantı reddinde (cURL) POST yeniden denenir');
     }
 }
@@ -227,20 +227,20 @@ $assert(count($vectors['cases']) > 10, 'vektör dosyası yüklendi');
 foreach ($vectors['cases'] as $case) {
     $secret = count($case['secrets']) === 1 ? $case['secrets'][0] : $case['secrets'];
     $expectedReason = $case['expected']['ok'] ? null : $case['expected']['reason'];
-    $reason = \HeroSignal\Webhook::verify($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
+    $reason = \Pushizo\Webhook::verify($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
     $assert($reason === $expectedReason, $case['name']);
     $assert(
-        \HeroSignal\Webhook::verify($case['payload'], $case['header'], $case['secrets'], $case['toleranceSeconds'], $case['now']) === $expectedReason,
+        \Pushizo\Webhook::verify($case['payload'], $case['header'], $case['secrets'], $case['toleranceSeconds'], $case['now']) === $expectedReason,
         $case['name'] . ' (secret dizisi)',
     );
     if (isset($case['events'])) {
-        $events = \HeroSignal\Webhook::constructEvents($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
+        $events = \Pushizo\Webhook::constructEvents($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
         $assert(count($events) === $case['events'], $case['name'] . ': olay sayısı');
     } elseif ($expectedReason !== null) {
         try {
-            \HeroSignal\Webhook::constructEvents($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
+            \Pushizo\Webhook::constructEvents($case['payload'], $case['header'], $secret, $case['toleranceSeconds'], $case['now']);
             $assert(false, $case['name'] . ': istisna fırlatmalı');
-        } catch (\HeroSignal\WebhookSignatureException $e) {
+        } catch (\Pushizo\WebhookSignatureException $e) {
             $assert($e->reason === $expectedReason, $case['name'] . ': WebhookSignatureException nedeni');
         }
     }
@@ -267,8 +267,8 @@ $assert($t->calls[2]['method'] === 'DELETE' && $t->calls[2]['url'] === 'https://
 try {
     $hs->suppressions->create(['channel' => 'email', 'value' => 'x']);
     $assert(false, '400 istisna fırlatmalı');
-} catch (HeroSignalException $e) {
-    $assert($e->status === 400 && $e->errorCode === 'HS_VALIDATION_ERROR', '400 → HeroSignalException');
+} catch (PushizoException $e) {
+    $assert($e->status === 400 && $e->errorCode === 'HS_VALIDATION_ERROR', '400 → PushizoException');
 }
 
 echo "e-posta/SMS/inbox içerik alanları" . PHP_EOL;

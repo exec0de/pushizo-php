@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * Veri ambarı dışa aktarımları (BigQuery, Snowflake, S3 Parquet). Kimlik bilgileri (`credentials`) şifreli

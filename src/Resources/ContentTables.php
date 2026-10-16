@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * İçerik tabloları (Content Catalogs): UTF-8 CSV ile multipart/form-data olarak yüklenir, şablonda anahtar
@@ -117,7 +117,7 @@ final class ContentTables
     {
         $content = @file_get_contents($path);
         if ($content === false) {
-            throw new \InvalidArgumentException('HeroSignal: dosya okunamadı: ' . $path);
+            throw new \InvalidArgumentException('Pushizo: dosya okunamadı: ' . $path);
         }
         return $content;
     }

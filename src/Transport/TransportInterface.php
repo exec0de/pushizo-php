@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Transport;
+namespace Pushizo\Transport;
 
 /** HTTP taşıma soyutlaması: üretimde cURL, testlerde sahte. */
 interface TransportInterface

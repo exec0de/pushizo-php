@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * SDK JWT identity verification genel anahtarları (`admin` kapsamı). Yalnızca genel anahtar (JWK veya PEM)

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * App API anahtarları (`admin` kapsamı). Düz anahtar yalnızca oluşturma ve rotasyon yanıtında bir kez

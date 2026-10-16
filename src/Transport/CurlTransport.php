@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Transport;
+namespace Pushizo\Transport;
 
-use HeroSignal\ConnectionException;
-use HeroSignal\HeroSignalException;
+use Pushizo\ConnectionException;
+use Pushizo\PushizoException;
 
 /** ext-curl ile HTTP istekleri (ek bağımlılık yok). */
 final class CurlTransport implements TransportInterface
@@ -17,7 +17,7 @@ final class CurlTransport implements TransportInterface
     {
         $ch = curl_init($url);
         if ($ch === false) {
-            throw new HeroSignalException(0, 'NETWORK', 'cURL başlatılamadı');
+            throw new PushizoException(0, 'NETWORK', 'cURL başlatılamadı');
         }
         $headerLines = [];
         foreach ($headers as $k => $v) {
@@ -51,7 +51,7 @@ final class CurlTransport implements TransportInterface
                 || ($errno === CURLE_OPERATION_TIMEDOUT && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) === 0.0);
             curl_close($ch);
             $message = $error !== '' ? $error : 'ağ hatası';
-            throw $notSent ? new ConnectionException($message) : new HeroSignalException(0, 'NETWORK', $message);
+            throw $notSent ? new ConnectionException($message) : new PushizoException(0, 'NETWORK', $message);
         }
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_close($ch);

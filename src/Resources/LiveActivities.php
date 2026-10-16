@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * iOS Live Activities (ADR-0024): türler (`admin` kapsamı) ve start/update/end gönderimi (`notifications:write`).

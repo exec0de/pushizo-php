@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * Giden webhook endpoint'leri (`admin` kapsamı). Alıcı tarafta imza doğrulaması için
- * `\HeroSignal\Webhook::verify()` / `constructEvents()`.
+ * `\Pushizo\Webhook::verify()` / `constructEvents()`.
  */
 final class Webhooks
 {

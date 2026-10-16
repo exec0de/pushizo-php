@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * Analitik raporları (`analytics:read`). `from`/`to` ISO-8601 (UTC); `compare` boolean verilebilir.

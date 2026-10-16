@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** Channels API (admin kapsamı): kimlik bilgisi yükleme ve doğrulama. */
 final class Channels

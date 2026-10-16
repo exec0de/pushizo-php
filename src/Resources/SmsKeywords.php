@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /**
  * İki yönlü mesaj anahtar sözcükleri (org geneli + app). Eylemler: tag ekle/kaldır, olay → journey tetiği,

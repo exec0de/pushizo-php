@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** İçe aktarma işleri (multipart CSV, UTF-8, en fazla 50 MB): OneSignal player dökümü veya kullanıcı CSV'si. */
 final class Imports
@@ -44,7 +44,7 @@ final class Imports
     {
         $content = @file_get_contents($path);
         if ($content === false) {
-            throw new \InvalidArgumentException('HeroSignal: dosya okunamadı: ' . $path);
+            throw new \InvalidArgumentException('Pushizo: dosya okunamadı: ' . $path);
         }
         return $this->create($type, $content, basename($path), $appId);
     }

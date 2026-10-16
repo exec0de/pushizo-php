@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** MCP onaylı mod taslakları: gönderim yapmadan kampanya ve dinamik segment taslağı oluşturur. */
 final class Mcp

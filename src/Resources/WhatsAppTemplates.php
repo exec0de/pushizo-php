@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** WhatsApp mesaj şablonları (Meta onay durumu ile); `sync` şablonları Meta Graph API'den yeniden çeker. */
 final class WhatsAppTemplates

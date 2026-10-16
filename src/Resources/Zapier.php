@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal\Resources;
+namespace Pushizo\Resources;
 
-use HeroSignal\Client;
+use Pushizo\Client;
 
 /** Zapier entegrasyonu: bağlantı testi, REST Hook abonelikleri ve tetik örnekleri. */
 final class Zapier

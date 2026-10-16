@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal;
+namespace Pushizo;
 
 /** API hata zarfından türetilen istisna; `status` ve `code` ile programatik işleme. */
-class HeroSignalException extends \RuntimeException
+class PushizoException extends \RuntimeException
 {
     /**
      * @param array<string, mixed>|null $details

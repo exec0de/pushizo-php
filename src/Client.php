@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace HeroSignal;
+namespace Pushizo;
 
-use HeroSignal\Transport\CurlTransport;
-use HeroSignal\Transport\TransportInterface;
+use Pushizo\Transport\CurlTransport;
+use Pushizo\Transport\TransportInterface;
 
 /**
- * HeroSignal PHP SDK istemcisi.
+ * Pushizo PHP SDK istemcisi.
  *
  * ```php
- * $hs = new \HeroSignal\Client(['api_key' => getenv('HS_API_KEY'), 'app_id' => 'app_…']);
+ * $hs = new \Pushizo\Client(['api_key' => getenv('HS_API_KEY'), 'app_id' => 'app_…']);
  * $hs->notifications->create([
  *   'idempotency_key' => "order-$id",
  *   'target' => ['include_aliases' => ['external_id' => [$userId]]],
@@ -77,10 +77,10 @@ final class Client
     public function __construct(array $options)
     {
         if (!isset($options['api_key']) || $options['api_key'] === '') {
-            throw new \InvalidArgumentException('HeroSignal: api_key gerekli.');
+            throw new \InvalidArgumentException('Pushizo: api_key gerekli.');
         }
         $this->apiKey = $options['api_key'];
-        $this->baseUrl = rtrim($options['base_url'] ?? 'https://api.herosignal.dev', '/');
+        $this->baseUrl = rtrim($options['base_url'] ?? 'https://api.pushizo.com', '/');
         $this->defaultAppId = $options['app_id'] ?? null;
         $this->maxRetries = $options['max_retries'] ?? count(self::BACKOFF_MS);
         $this->timeoutSeconds = $options['timeout'] ?? 30;
@@ -174,7 +174,7 @@ final class Client
     {
         $id = $appId ?? $this->defaultAppId;
         if ($id === null || $id === '') {
-            throw new \InvalidArgumentException('HeroSignal: app_id verilmedi (seçenek veya çağrı parametresi).');
+            throw new \InvalidArgumentException('Pushizo: app_id verilmedi (seçenek veya çağrı parametresi).');
         }
         return $id;
     }
@@ -277,14 +277,14 @@ final class Client
         $headers = [
             'Authorization' => 'Bearer ' . $this->apiKey,
             'Accept' => 'application/json',
-            'User-Agent' => 'herosignal-php/' . self::VERSION,
+            'User-Agent' => 'pushizo-php/' . self::VERSION,
         ];
         if (isset($options['idempotency_key']) && $options['idempotency_key'] !== '') {
             $headers['Idempotency-Key'] = $options['idempotency_key'];
         }
         $payload = null;
         if (isset($options['multipart'])) {
-            $boundary = 'herosignal-' . bin2hex(random_bytes(12));
+            $boundary = 'pushizo-' . bin2hex(random_bytes(12));
             $headers['Content-Type'] = 'multipart/form-data; boundary=' . $boundary;
             $payload = self::multipartBody($options['multipart'], $boundary);
         } elseif ($body !== null) {
@@ -299,7 +299,7 @@ final class Client
         while (true) {
             try {
                 $response = $this->transport->send($method, $url, $headers, $payload, $this->timeoutSeconds);
-            } catch (HeroSignalException $e) {
+            } catch (PushizoException $e) {
                 if ($attempt >= $this->maxRetries || !self::shouldRetry($method, $e, $hasKey)) {
                     throw $e;
                 }
@@ -315,7 +315,7 @@ final class Client
 
             $envelope = json_decode($response['body'], true);
             $error = is_array($envelope) && isset($envelope['error']) && is_array($envelope['error']) ? $envelope['error'] : [];
-            $exception = new HeroSignalException(
+            $exception = new PushizoException(
                 $status,
                 (string) ($error['code'] ?? ('HTTP_' . $status)),
                 (string) ($error['message'] ?? ('HTTP ' . $status)),
@@ -336,7 +336,7 @@ final class Client
      * metotlarda; POST/PATCH'te yalnızca Idempotency-Key varsa ya da istek sunucuya hiç gönderilmediyse. Aksi hâlde
      * sunucu isteği işlemiş olabilir ve tekrar çift kayıt üretebilir.
      */
-    private static function shouldRetry(string $method, HeroSignalException $e, bool $hasIdempotencyKey): bool
+    private static function shouldRetry(string $method, PushizoException $e, bool $hasIdempotencyKey): bool
     {
         if ($e->status === 429) {
             return true;
