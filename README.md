@@ -2,7 +2,20 @@
 
 Pushizo PHP sunucu SDK'sı. PHP 8.1+, yalnızca `ext-curl` ve `ext-json`; ek Composer bağımlılığı yoktur.
 Yalnızca sunucuda kullanın; API anahtarını istemci koduna gömmeyin. Ayrıntılı rehber:
-[`docs/sdk/php.md`](../../docs/sdk/php.md).
+[docs.pushizo.com/docs/sdk/php](https://docs.pushizo.com/docs/sdk/php).
+
+## Kurulum
+
+```bash
+composer require pushizo/pushizo-php
+```
+
+Packagist'e erişilemeyen ortamlarda doğrudan bu depodan:
+
+```bash
+composer config repositories.pushizo vcs https://github.com/exec0de/pushizo-php
+composer require pushizo/pushizo-php
+```
 
 ## Başlatma
 

@@ -1,0 +1,3 @@
+# Composer dağıtım arşivine (dist) girmeyecekler: testler monorepo verisine (testdata, openapi.yaml) bağlıdır.
+/tests export-ignore
+/.gitattributes export-ignore
