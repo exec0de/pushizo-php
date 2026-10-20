@@ -7,7 +7,7 @@ namespace Pushizo\Resources;
 use Pushizo\Client;
 
 /**
- * İki yönlü mesajlaşma konuşmaları (SMS, WhatsApp, RCS). WhatsApp'ta son gelen mesajdan sonraki 24 saat dışında
+ * İki yönlü mesajlaşma konuşmaları (SMS, WhatsApp, RCS, e-posta, canlı sohbet; ADR-0040). WhatsApp'ta son gelen mesajdan sonraki 24 saat dışında
  * yalnızca onaylı şablonla yanıt verilebilir (aksi hâlde 422 `WHATSAPP_WINDOW_CLOSED`).
  */
 final class Conversations
@@ -72,5 +72,49 @@ final class Conversations
     public function markRead(string $conversationId, ?string $appId = null): array
     {
         return $this->client->request('POST', $this->base($appId) . '/' . rawurlencode($conversationId) . '/read');
+    }
+
+    /**
+     * Durumu değiştirir: `open`, `pending` veya `resolved` (`closed`, `resolved` ile eşdeğerdir).
+     *
+     * @param array{status:'open'|'pending'|'resolved'|'closed'} $input
+     * @return array<string, mixed>
+     */
+    public function update(string $conversationId, array $input, ?string $appId = null): array
+    {
+        return $this->client->request('PATCH', $this->base($appId) . '/' . rawurlencode($conversationId), [], $input);
+    }
+
+    /**
+     * Temsilciye ve/veya takıma atar; `null` atamayı kaldırır. `inbox.manage` yetkisi olmayan anahtar yalnızca
+     * kendine atayabilir.
+     *
+     * @param array{assignee_id?:string|null, team_id?:string|null} $input
+     * @return array<string, mixed>
+     */
+    public function assign(string $conversationId, array $input, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->base($appId) . '/' . rawurlencode($conversationId) . '/assign', [], $input);
+    }
+
+    /**
+     * Konuşmanın kişisine etiket ekler (`add`) veya kaldırır (`remove`).
+     *
+     * @param array{add?:array<string, string>, remove?:list<string>} $input
+     * @return array<string, mixed>
+     */
+    public function updateTags(string $conversationId, array $input, ?string $appId = null): array
+    {
+        return $this->client->request('POST', $this->base($appId) . '/' . rawurlencode($conversationId) . '/tags', [], $input);
+    }
+
+    /**
+     * Zaman çizelgesi: atama, durum değişikliği, ilk yanıt ve bot devri olayları.
+     *
+     * @return array<string, mixed>
+     */
+    public function activity(string $conversationId, ?string $appId = null): array
+    {
+        return $this->client->request('GET', $this->base($appId) . '/' . rawurlencode($conversationId) . '/activity');
     }
 }

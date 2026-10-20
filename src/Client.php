@@ -66,9 +66,17 @@ final class Client
     public readonly Resources\WhatsAppTemplates $whatsappTemplates;
     public readonly Resources\EmailDeliverability $emailDeliverability;
     public readonly Resources\Zapier $zapier;
-    /** Reklam hesapları ve reklam kitleleri (ADR-0037). */
+    /** Reklam hesapları, kitleler (ADR-0037), kampanya raporlama, atribüsyon ve bütçe uyarıları (ADR-0038). */
     public readonly Resources\Ads $ads;
     public readonly Resources\Mcp $mcp;
+    /** Web kampanyaları: pop-up/banner/slide-in, durum geçişi ve günlük rapor (ADR-0039). */
+    public readonly Resources\WebCampaigns $webCampaigns;
+    /** Formlar: tanım, gönderimler ve sunucu tarafı gönderim. */
+    public readonly Resources\Forms $forms;
+    /** Anketler: NPS/CSAT raporu, yanıtlar ve sunucu tarafı yanıt. */
+    public readonly Resources\Surveys $surveys;
+    /** Landing sayfaları: liste, detay, yayınla/yayından kaldır. */
+    public readonly Resources\LandingPages $landingPages;
 
     /**
      * @param array{
@@ -124,6 +132,10 @@ final class Client
         $this->zapier = new Resources\Zapier($this);
         $this->ads = new Resources\Ads($this);
         $this->mcp = new Resources\Mcp($this);
+        $this->webCampaigns = new Resources\WebCampaigns($this);
+        $this->forms = new Resources\Forms($this);
+        $this->surveys = new Resources\Surveys($this);
+        $this->landingPages = new Resources\LandingPages($this);
     }
 
     /** SDK identity verification: `identity_hash` = HMAC-SHA256(sdk_secret, external_id). */

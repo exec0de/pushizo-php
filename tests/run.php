@@ -528,6 +528,58 @@ $table = [
     'POST /v1/apps/{appId}/ads/audiences/{audienceId}/sync' => fn (Client $c) => $c->ads->syncAudience('adu_1', ['full' => true]),
     'GET /v1/apps/{appId}/ads/audiences/{audienceId}/syncs' => fn (Client $c) => $c->ads->listSyncs('adu_1', ['limit' => 5]),
     'POST /v1/apps/{appId}/ads/audiences/{audienceId}/lookalikes' => fn (Client $c) => $c->ads->createLookalike('adu_1', ['country' => 'TR', 'ratio' => 0.01]),
+    // v3: reklam raporlama, Conversions API ve bütçe uyarıları (ADR-0038)
+    'GET /v1/apps/{appId}/ads/campaigns' => fn (Client $c) => $c->ads->listCampaigns(['level' => 'ad_set', 'parent_id' => 'ade_1']),
+    'GET /v1/apps/{appId}/ads/campaigns/{entityId}' => fn (Client $c) => $c->ads->getCampaign('ade_1'),
+    'PATCH /v1/apps/{appId}/ads/campaigns/{entityId}' => fn (Client $c) => $c->ads->updateCampaign('ade_1', ['status' => 'paused', 'daily_budget' => '150.00']),
+    'POST /v1/apps/{appId}/ads/accounts/{accountId}/refresh' => fn (Client $c) => $c->ads->refreshAccount('ada_1'),
+    'GET /v1/apps/{appId}/ads/reports/spend' => fn (Client $c) => $c->ads->spendReport(['from' => '2026-10-01', 'to' => '2026-10-07', 'group_by' => 'platform']),
+    'GET /v1/apps/{appId}/ads/reports/attribution' => fn (Client $c) => $c->ads->attributionReport(['from' => '2026-10-01', 'to' => '2026-10-07', 'model' => 'linear']),
+    'GET /v1/apps/{appId}/ads/reports/ltv' => fn (Client $c) => $c->ads->ltvReport(['months' => 6]),
+    'GET /v1/apps/{appId}/ads/conversions-api/configs' => fn (Client $c) => $c->ads->listCapiConfigs(),
+    'GET /v1/apps/{appId}/ads/conversions-api/deliveries' => fn (Client $c) => $c->ads->listCapiDeliveries(['status' => 'failed', 'limit' => 20]),
+    'GET /v1/apps/{appId}/ads/alert-rules' => fn (Client $c) => $c->ads->listAlertRules(),
+    'POST /v1/apps/{appId}/ads/alert-rules' => fn (Client $c) => $c->ads->createAlertRule(['name' => 'Günlük tavan', 'kind' => 'daily_spend', 'threshold' => 500]),
+    'PATCH /v1/apps/{appId}/ads/alert-rules/{ruleId}' => fn (Client $c) => $c->ads->updateAlertRule('abr_1', ['enabled' => false]),
+    'DELETE /v1/apps/{appId}/ads/alert-rules/{ruleId}' => fn (Client $c) => $c->ads->deleteAlertRule('abr_1'),
+    'GET /v1/apps/{appId}/ads/alerts' => fn (Client $c) => $c->ads->listAlerts(['rule_id' => 'abr_1']),
+    // v3: konuşma yönetimi ve ekip gelen kutusu (ADR-0040)
+    'PATCH /v1/apps/{appId}/conversations/{conversationId}' => fn (Client $c) => $c->conversations->update('cnv_1', ['status' => 'resolved']),
+    'POST /v1/apps/{appId}/conversations/{conversationId}/assign' => fn (Client $c) => $c->conversations->assign('cnv_1', ['assignee_id' => 'usr_1', 'team_id' => null]),
+    'POST /v1/apps/{appId}/conversations/{conversationId}/tags' => fn (Client $c) => $c->conversations->updateTags('cnv_1', ['add' => ['vip' => '1'], 'remove' => ['lead']]),
+    'GET /v1/apps/{appId}/conversations/{conversationId}/activity' => fn (Client $c) => $c->conversations->activity('cnv_1'),
+    'GET /v1/apps/{appId}/canned-responses' => fn (Client $c) => $c->inbox->listCannedResponses(['q' => 'iade']),
+    'POST /v1/apps/{appId}/canned-responses' => fn (Client $c) => $c->inbox->createCannedResponse(['shortcut' => 'iade', 'title' => 'İade', 'body' => 'Merhaba {{ contact.name }}']),
+    'PATCH /v1/apps/{appId}/canned-responses/{cannedId}' => fn (Client $c) => $c->inbox->updateCannedResponse('cr_1', ['title' => 'İade süreci']),
+    'DELETE /v1/apps/{appId}/canned-responses/{cannedId}' => fn (Client $c) => $c->inbox->deleteCannedResponse('cr_1'),
+    'GET /v1/apps/{appId}/inbox/teams' => fn (Client $c) => $c->inbox->listTeams(),
+    'GET /v1/apps/{appId}/inbox/agents' => fn (Client $c) => $c->inbox->listAgents(),
+    'GET /v1/apps/{appId}/inbox/settings' => fn (Client $c) => $c->inbox->getSettings(),
+    'PUT /v1/apps/{appId}/inbox/settings' => fn (Client $c) => $c->inbox->updateSettings(['routing' => ['auto_assign' => true, 'visibility' => 'team']]),
+    'GET /v1/apps/{appId}/inbox/metrics' => fn (Client $c) => $c->inbox->metrics(['from' => '2026-10-01T00:00:00Z', 'channel' => 'chat']),
+    // v3: web büyüme (ADR-0039)
+    'GET /v1/apps/{appId}/web-campaigns' => fn (Client $c) => $c->webCampaigns->list(['status' => 'active']),
+    'POST /v1/apps/{appId}/web-campaigns' => fn (Client $c) => $c->webCampaigns->create(['name' => 'Hoş geldin', 'display' => ['layout' => 'popup', 'blocks' => [['type' => 'title', 'text' => ['tr' => 'Hoş geldiniz']]]], 'trigger' => ['kind' => 'page_load']]),
+    'GET /v1/apps/{appId}/web-campaigns/{campaignId}' => fn (Client $c) => $c->webCampaigns->get('wcm_1'),
+    'PATCH /v1/apps/{appId}/web-campaigns/{campaignId}' => fn (Client $c) => $c->webCampaigns->update('wcm_1', ['priority' => 5]),
+    'GET /v1/apps/{appId}/web-campaigns/{campaignId}/report' => fn (Client $c) => $c->webCampaigns->report('wcm_1', ['days' => 7]),
+    'POST /v1/apps/{appId}/web-campaigns/{campaignId}/status' => fn (Client $c) => $c->webCampaigns->setStatus('wcm_1', 'active'),
+    'GET /v1/apps/{appId}/forms' => fn (Client $c) => $c->forms->list(),
+    'POST /v1/apps/{appId}/forms' => fn (Client $c) => $c->forms->create(['name' => 'Bülten', 'fields' => [['id' => 'email', 'type' => 'email', 'label' => ['tr' => 'E-posta'], 'required' => true]]]),
+    'GET /v1/apps/{appId}/forms/{formId}' => fn (Client $c) => $c->forms->get('frm_1'),
+    'GET /v1/apps/{appId}/forms/{formId}/submissions' => fn (Client $c) => $c->forms->listSubmissions('frm_1', ['status' => 'confirmed', 'limit' => 50]),
+    'POST /v1/apps/{appId}/forms/{formId}/submissions' => fn (Client $c) => $c->forms->submit('frm_1', ['values' => ['email' => 'a@example.com'], 'external_id' => 'u1']),
+    'GET /v1/apps/{appId}/surveys' => fn (Client $c) => $c->surveys->list(),
+    'POST /v1/apps/{appId}/surveys' => fn (Client $c) => $c->surveys->create(['name' => 'NPS', 'questions' => [['id' => 'q1', 'type' => 'nps', 'text' => ['tr' => 'Bizi önerir misiniz?']]]]),
+    'GET /v1/apps/{appId}/surveys/{surveyId}' => fn (Client $c) => $c->surveys->get('srv_1'),
+    'POST /v1/apps/{appId}/surveys/{surveyId}/status' => fn (Client $c) => $c->surveys->setStatus('srv_1', 'active'),
+    'GET /v1/apps/{appId}/surveys/{surveyId}/report' => fn (Client $c) => $c->surveys->report('srv_1', ['days' => 30]),
+    'GET /v1/apps/{appId}/surveys/{surveyId}/responses' => fn (Client $c) => $c->surveys->listResponses('srv_1', ['nps_category' => 'detractor']),
+    'POST /v1/apps/{appId}/surveys/{surveyId}/responses' => fn (Client $c) => $c->surveys->respond('srv_1', ['answers' => ['q1' => 9], 'external_id' => 'u1']),
+    'GET /v1/apps/{appId}/landing-pages' => fn (Client $c) => $c->landingPages->list(['status' => 'published']),
+    'GET /v1/apps/{appId}/landing-pages/{pageId}' => fn (Client $c) => $c->landingPages->get('lp_1'),
+    'POST /v1/apps/{appId}/landing-pages/{pageId}/publish' => fn (Client $c) => $c->landingPages->publish('lp_1'),
+    'POST /v1/apps/{appId}/landing-pages/{pageId}/unpublish' => fn (Client $c) => $c->landingPages->unpublish('lp_1'),
     // v2: Zapier ve MCP
     'GET /v1/apps/{appId}/integrations/zapier/me' => fn (Client $c) => $c->zapier->me(),
     'POST /v1/apps/{appId}/integrations/zapier/hooks' => fn (Client $c) => $c->zapier->subscribe(['target_url' => 'https://hooks.zapier.com/x', 'event' => 'user.created']),
@@ -616,6 +668,44 @@ $hs->zapier->samples(['event' => 'event.received', 'event_name' => 'purchase']);
 $assert($t->calls[7]['url'] === 'https://api.test/v1/apps/app_1/integrations/zapier/samples?event=event.received&event_name=purchase', 'zapier.samples sorgusu');
 $hs->warehouseExports->run('wex_1');
 $assert($t->calls[8]['method'] === 'POST' && $t->calls[8]['url'] === 'https://api.test/v1/apps/app_1/warehouse-exports/wex_1/run' && $t->calls[8]['body'] === null, 'warehouseExports.run gövdesiz POST');
+
+echo "v3 kaynakları: istek şekilleri" . PHP_EOL;
+$t = new FakeTransport(array_merge(
+    array_fill(0, 8, ['status' => 200, 'body' => '{"id":"x"}']),
+    [
+        ['status' => 200, 'body' => '{"data":[{"id":"frs_1"},{"id":"frs_2"}],"next_cursor":"c2","has_more":true}'],
+        ['status' => 200, 'body' => '{"data":[{"id":"frs_3"}],"next_cursor":null,"has_more":false}'],
+    ],
+    array_fill(0, 4, ['status' => 200, 'body' => '{"id":"x"}']),
+));
+$hs = new Client(['api_key' => 'k', 'base_url' => 'https://api.test', 'app_id' => 'app_1', 'transport' => $t, 'sleep' => $noSleep]);
+$hs->conversations->update('cnv/1', ['status' => 'pending'], 'app_2');
+$assert($t->calls[0]['method'] === 'PATCH' && $t->calls[0]['url'] === 'https://api.test/v1/apps/app_2/conversations/cnv%2F1' && $t->calls[0]['body'] === '{"status":"pending"}', 'conversations.update PATCH gövdesi');
+$hs->conversations->assign('cnv_1', ['assignee_id' => null, 'team_id' => 'team_1']);
+$assert($t->calls[1]['body'] === '{"assignee_id":null,"team_id":"team_1"}', 'conversations.assign null atamayı kaldırır');
+$hs->inbox->metrics(['from' => '2026-10-01T00:00:00Z', 'channel' => 'chat']);
+$assert($t->calls[2]['url'] === 'https://api.test/v1/apps/app_1/inbox/metrics?from=2026-10-01T00%3A00%3A00Z&channel=chat', 'inbox.metrics sorgusu');
+$hs->inbox->updateSettings(['widget' => ['enabled' => true, 'position' => 'left']]);
+$assert($t->calls[3]['method'] === 'PUT' && $t->calls[3]['body'] === '{"widget":{"enabled":true,"position":"left"}}', 'inbox.updateSettings PUT gövdesi');
+$hs->ads->spendReport(['from' => '2026-10-01', 'to' => '2026-10-07', 'currency' => 'TRY', 'group_by' => 'campaign']);
+$assert($t->calls[4]['url'] === 'https://api.test/v1/apps/app_1/ads/reports/spend?from=2026-10-01&to=2026-10-07&currency=TRY&group_by=campaign', 'ads.spendReport sorgusu');
+$hs->ads->refreshAccount('ada_1');
+$assert($t->calls[5]['method'] === 'POST' && $t->calls[5]['url'] === 'https://api.test/v1/apps/app_1/ads/accounts/ada_1/refresh' && $t->calls[5]['body'] === null, 'ads.refreshAccount gövdesiz POST');
+$hs->webCampaigns->setStatus('wcm_1', 'paused');
+$assert($t->calls[6]['url'] === 'https://api.test/v1/apps/app_1/web-campaigns/wcm_1/status' && $t->calls[6]['body'] === '{"status":"paused"}', 'webCampaigns.setStatus gövdesi');
+$hs->forms->submit('frm_1', ['values' => ['email' => 'ayşe@example.com', 'consent' => true], 'external_id' => 'u1']);
+$assert($t->calls[7]['body'] === '{"values":{"email":"ayşe@example.com","consent":true},"external_id":"u1"}', 'forms.submit gövdesi (UTF-8)');
+$subIds = [];
+foreach ($hs->paginate(fn (?string $c) => $hs->forms->listSubmissions('frm_1', ['cursor' => $c, 'limit' => 2])) as $sub) {
+    $subIds[] = $sub['id'];
+}
+$assert($subIds === ['frs_1', 'frs_2', 'frs_3'] && str_contains($t->calls[9]['url'], 'cursor=c2'), 'forms.listSubmissions paginate ile dolaşılır');
+$hs->surveys->respond('srv_1', ['answers' => ['q1' => 10, 'q2' => 'Harika']]);
+$assert($t->calls[10]['url'] === 'https://api.test/v1/apps/app_1/surveys/srv_1/responses' && $t->calls[10]['body'] === '{"answers":{"q1":10,"q2":"Harika"}}', 'surveys.respond gövdesi');
+$hs->surveys->listResponses('srv_1', ['nps_category' => 'promoter', 'text_question' => 'q2']);
+$assert($t->calls[11]['url'] === 'https://api.test/v1/apps/app_1/surveys/srv_1/responses?nps_category=promoter&text_question=q2', 'surveys.listResponses filtreleri');
+$hs->landingPages->unpublish('lp/1', 'app_3');
+$assert($t->calls[12]['method'] === 'POST' && $t->calls[12]['url'] === 'https://api.test/v1/apps/app_3/landing-pages/lp%2F1/unpublish' && $t->calls[12]['body'] === null, 'landingPages.unpublish gövdesiz POST');
 
 echo "Journey'ler: istek şekilleri" . PHP_EOL;
 $t = new FakeTransport(array_fill(0, 12, ['status' => 200, 'body' => '{"id":"jrn_1"}']));

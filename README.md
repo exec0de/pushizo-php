@@ -39,7 +39,7 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 | `notifications` | `create`, `list`, `get`, `cancel`, `estimate`, `deliveries`, `history`, `exportEvents` |
 | `users` | `list`, `upsert`, `search`, `getByAlias`, `getByExternalId`, `update`, `delete`, `getIdentity`, `export`, `addAliases`, `removeAlias`, `addSubscription` |
 | `subscriptions` | `get`, `update`, `delete`, `getUserIdentity`, `updateByToken`, `setOwner` |
-| `inbox` | `list`, `readAll`, `read`, `archive` |
+| `inbox` | `list`, `readAll`, `read`, `archive`; ekip gelen kutusu: `listCannedResponses`, `createCannedResponse`, `updateCannedResponse`, `deleteCannedResponse`, `listTeams`, `listAgents`, `getSettings`, `updateSettings`, `metrics` |
 | `events` | `send`, `listDefinitions`, `getDefinition`, `updateDefinition` |
 | `segments` | `list`, `create`, `preview`, `get`, `update`, `delete`, `usedBy`, `estimate` |
 | `templates` | `list`, `create`, `get`, `update`, `delete`, `copyToApp`, `versions`, `render`, `stats` |
@@ -56,12 +56,17 @@ Her public API işlemi (`/sdk/v1` hariç) bir SDK metoduna karşılık gelir; e�
 | `dataFeeds` | `list`, `create`, `get`, `update`, `delete`, `test` |
 | `contentTables` | `list`, `create` (CSV metni, multipart), `createFromFile`, `get`, `update`, `delete`, `rows`, `replaceRows`, `replaceRowsFromFile` |
 | `warehouseExports` | `tables`, `testConnection`, `list`, `create`, `get`, `update`, `delete`, `test`, `run`, `runs` |
-| `conversations` | `list`, `get`, `messages`, `reply`, `markRead` |
+| `conversations` | `list`, `get`, `messages`, `reply`, `markRead`, `update`, `assign`, `updateTags`, `activity` |
 | `smsKeywords` | `list`, `create`, `update`, `delete` |
 | `whatsappTemplates` | `list`, `sync` |
 | `emailDeliverability` | `get`, `update`, `verifyAddress`, `listWarmupPlans`, `createWarmupPlan`, `updateWarmupPlan`, `deleteWarmupPlan` |
 | `zapier` | `me`, `subscribe`, `unsubscribe`, `samples` |
 | `mcp` | `createCampaignDraft`, `createSegmentDraft` |
+| `ads` | `listAccounts`, `listAudiences`, `createAudience`, `getAudience`, `updateAudience`, `deleteAudience`, `syncAudience`, `listSyncs`, `createLookalike`, `listCampaigns`, `getCampaign`, `updateCampaign`, `refreshAccount`, `spendReport`, `attributionReport`, `ltvReport`, `listCapiConfigs`, `listCapiDeliveries`, `listAlertRules`, `createAlertRule`, `updateAlertRule`, `deleteAlertRule`, `listAlerts` |
+| `webCampaigns` | `list`, `create`, `get`, `update`, `report`, `setStatus` |
+| `forms` | `list`, `create`, `get`, `listSubmissions`, `submit` |
+| `surveys` | `list`, `create`, `get`, `setStatus`, `report`, `listResponses`, `respond` |
+| `landingPages` | `list`, `get`, `publish`, `unpublish` |
 
 Webhook alıcıları için `Pushizo\Webhook::verify()` ve `constructEvents()` kullanılır.
 
@@ -190,6 +195,36 @@ $export = $hs->warehouseExports->create([
     'credentials' => ['service_account_json' => getenv('GCP_SA_JSON')],
 ]);
 $hs->warehouseExports->run($export['id']);
+```
+
+## Gelen kutusu, reklam raporlama ve web büyüme
+
+```php
+// Ekip gelen kutusu: durum, atama, etiket ve metrikler (ADR-0040)
+$hs->conversations->assign('cnv_1', ['team_id' => 'team_1', 'assignee_id' => null]);
+$hs->conversations->updateTags('cnv_1', ['add' => ['plan' => 'pro'], 'remove' => ['lead']]);
+$hs->conversations->update('cnv_1', ['status' => 'resolved']);
+$metrics = $hs->inbox->metrics(['from' => '2026-10-01T00:00:00Z', 'channel' => 'chat']);
+$hs->inbox->createCannedResponse(['shortcut' => 'iade', 'title' => 'İade', 'body' => 'Merhaba {{ contact.name }}, iadeniz alındı.']);
+
+// Reklam raporlama ve bütçe uyarıları (ADR-0038); from/to zorunlu
+$spend = $hs->ads->spendReport(['from' => '2026-10-01', 'to' => '2026-10-31', 'group_by' => 'campaign']);
+$hs->ads->updateCampaign('ade_1', ['status' => 'paused']); // platforma da yazılır
+$hs->ads->createAlertRule(['name' => 'Günlük tavan', 'kind' => 'daily_spend', 'threshold' => 500, 'recipients' => ['pazarlama@example.com']]);
+
+// Web büyüme (ADR-0039): kampanya taslak oluşur, setStatus ile yayınlanır
+$popup = $hs->webCampaigns->create([
+    'name' => 'Bülten pop-up',
+    'display' => ['layout' => 'popup', 'blocks' => [['type' => 'title', 'text' => ['tr' => 'Bültenimize katılın']]], 'form_id' => 'frm_1'],
+    'trigger' => ['kind' => 'exit_intent'],
+]);
+$hs->webCampaigns->setStatus($popup['id'], 'active');
+$hs->forms->submit('frm_1', ['values' => ['email' => 'ayse@example.com'], 'external_id' => 'u-1']); // sunucu tarafı gönderim
+foreach ($hs->paginate(fn (?string $c) => $hs->forms->listSubmissions('frm_1', ['status' => 'confirmed', 'cursor' => $c])) as $s) {
+    echo $s['id'], PHP_EOL;
+}
+$nps = $hs->surveys->report('srv_1', ['days' => 30]);
+$hs->landingPages->publish('lp_1');
 ```
 
 ## Geliştirme
