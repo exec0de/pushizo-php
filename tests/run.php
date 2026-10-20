@@ -518,6 +518,16 @@ $table = [
     'GET /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}/usage' => fn (Client $c) => $c->emailDeliverability->warmupPlanUsage('wup_1', 7),
     'PATCH /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}' => fn (Client $c) => $c->emailDeliverability->updateWarmupPlan('wup_1', ['status' => 'paused']),
     'DELETE /v1/apps/{appId}/email-deliverability/warmup-plans/{planId}' => fn (Client $c) => $c->emailDeliverability->deleteWarmupPlan('wup_1'),
+    // v3: reklam kitleleri (ADR-0037)
+    'GET /v1/apps/{appId}/ads/accounts' => fn (Client $c) => $c->ads->listAccounts(),
+    'GET /v1/apps/{appId}/ads/audiences' => fn (Client $c) => $c->ads->listAudiences(['ad_account_id' => 'ada_1']),
+    'POST /v1/apps/{appId}/ads/audiences' => fn (Client $c) => $c->ads->createAudience(['ad_account_id' => 'ada_1', 'source' => 'segment', 'segment_id' => 'seg_1', 'name' => 'VIP']),
+    'GET /v1/apps/{appId}/ads/audiences/{audienceId}' => fn (Client $c) => $c->ads->getAudience('adu_1'),
+    'PATCH /v1/apps/{appId}/ads/audiences/{audienceId}' => fn (Client $c) => $c->ads->updateAudience('adu_1', ['status' => 'paused']),
+    'DELETE /v1/apps/{appId}/ads/audiences/{audienceId}' => fn (Client $c) => $c->ads->deleteAudience('adu_1', true),
+    'POST /v1/apps/{appId}/ads/audiences/{audienceId}/sync' => fn (Client $c) => $c->ads->syncAudience('adu_1', ['full' => true]),
+    'GET /v1/apps/{appId}/ads/audiences/{audienceId}/syncs' => fn (Client $c) => $c->ads->listSyncs('adu_1', ['limit' => 5]),
+    'POST /v1/apps/{appId}/ads/audiences/{audienceId}/lookalikes' => fn (Client $c) => $c->ads->createLookalike('adu_1', ['country' => 'TR', 'ratio' => 0.01]),
     // v2: Zapier ve MCP
     'GET /v1/apps/{appId}/integrations/zapier/me' => fn (Client $c) => $c->zapier->me(),
     'POST /v1/apps/{appId}/integrations/zapier/hooks' => fn (Client $c) => $c->zapier->subscribe(['target_url' => 'https://hooks.zapier.com/x', 'event' => 'user.created']),

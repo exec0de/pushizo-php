@@ -66,6 +66,8 @@ final class Client
     public readonly Resources\WhatsAppTemplates $whatsappTemplates;
     public readonly Resources\EmailDeliverability $emailDeliverability;
     public readonly Resources\Zapier $zapier;
+    /** Reklam hesapları ve reklam kitleleri (ADR-0037). */
+    public readonly Resources\Ads $ads;
     public readonly Resources\Mcp $mcp;
 
     /**
@@ -120,6 +122,7 @@ final class Client
         $this->whatsappTemplates = new Resources\WhatsAppTemplates($this);
         $this->emailDeliverability = new Resources\EmailDeliverability($this);
         $this->zapier = new Resources\Zapier($this);
+        $this->ads = new Resources\Ads($this);
         $this->mcp = new Resources\Mcp($this);
     }
 
