@@ -3,7 +3,7 @@
   "description": "Pushizo PHP sunucu SDK'sı: public API'nin tamamı (bildirim, kullanıcı, segment, şablon, kampanya, analitik, veri aktarımı, webhook…)",
   "type": "library",
   "license": "MIT",
-  "homepage": "https://github.com/exec0de/pushizo/tree/main/sdk/php",
+  "homepage": "https://docs.pushizo.com/docs/sdk/php",
   "keywords": [
     "pushizo",
     "push",
@@ -19,9 +19,9 @@
     }
   ],
   "support": {
-    "issues": "https://github.com/exec0de/pushizo/issues",
-    "source": "https://github.com/exec0de/pushizo/tree/main/sdk/php",
-    "docs": "https://github.com/exec0de/pushizo/blob/main/docs/sdk/php.md"
+    "issues": "https://github.com/exec0de/pushizo-php/issues",
+    "source": "https://github.com/exec0de/pushizo-php",
+    "docs": "https://docs.pushizo.com/docs/sdk/php"
   },
   "require": {
     "php": ">=8.1",
