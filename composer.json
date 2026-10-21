@@ -19,8 +19,8 @@
     }
   ],
   "support": {
-    "issues": "https://github.com/exec0de/pushizo-php/issues",
-    "source": "https://github.com/exec0de/pushizo-php",
+    "issues": "https://github.com/pushizo/pushizo-php/issues",
+    "source": "https://github.com/pushizo/pushizo-php",
     "docs": "https://docs.pushizo.com/docs/sdk/php"
   },
   "require": {
