@@ -13,8 +13,17 @@
 
 **Pushizo PHP SDK** — Server-side SDK for PHP 8.1+ with only ext-curl and ext-json: notifications, users, events, journeys, webhook signature verification and the full public API. Works with Laravel and plain PHP.
 
-> **Status:** Publishing to Packagist is in progress; until then you can build from this repository.<br>
-> **Durum:** Packagist yayını hazırlanıyor; o zamana kadar bu depodan derleyerek kullanabilirsiniz.
+> **Status:** Publishing to Packagist is in progress.<br>
+> **Durum:** Packagist yayını hazırlanıyor.
+
+**Install from GitHub until then · O zamana kadar GitHub'dan kurulum:**
+
+```bash
+composer config repositories.pushizo vcs https://github.com/pushizo/pushizo-php
+composer require pushizo/pushizo-php:^0.1.0
+```
+
+**After publication · Yayından sonra:**
 
 ```bash
 composer require pushizo/pushizo-php
